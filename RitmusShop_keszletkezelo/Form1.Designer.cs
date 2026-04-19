@@ -28,18 +28,44 @@
         /// </summary>
         private void InitializeComponent()
         {
+            btnLoadCategories = new Button();
+            lstCategories = new ListBox();
             SuspendLayout();
+            // 
+            // btnLoadCategories
+            // 
+            btnLoadCategories.Location = new Point(108, 905);
+            btnLoadCategories.Name = "btnLoadCategories";
+            btnLoadCategories.Size = new Size(138, 65);
+            btnLoadCategories.TabIndex = 0;
+            btnLoadCategories.Text = "Kategóriák betöltése";
+            btnLoadCategories.UseVisualStyleBackColor = true;
+            btnLoadCategories.Click += btnLoadCategories_Click;
+            // 
+            // lstCategories
+            // 
+            lstCategories.FormattingEnabled = true;
+            lstCategories.Location = new Point(14, 20);
+            lstCategories.Name = "lstCategories";
+            lstCategories.Size = new Size(459, 804);
+            lstCategories.TabIndex = 1;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1162, 1266);
+            Controls.Add(lstCategories);
+            Controls.Add(btnLoadCategories);
             Name = "Form1";
             Text = "Form1";
+            Load += Form1_Load;
             ResumeLayout(false);
         }
 
         #endregion
+
+        private Button btnLoadCategories;
+        private ListBox lstCategories;
     }
 }
