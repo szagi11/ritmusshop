@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+appsettings.local.json
+appsettings.Development.json
+secrets.json
+*.credentials
+*.env
+.env.local
+api-key.txt
+hotcakes-config.json
