@@ -92,9 +92,18 @@ namespace RitmusShop_keszletkezelo.Api
             }
         }
 
-        // ─────────────────────────────────────────
-        // Publikus végpontok
-        // ─────────────────────────────────────────
+        public async Task<PageOfProductsDto> GetProductsForCategoryAsync(string categoryBvin, int pageNumber, int pageSize)
+        {
+            var queryParams = new Dictionary<string, string>
+                {
+                    { "bycategory", categoryBvin },
+                    { "page", pageNumber.ToString() },
+                    { "pagesize", pageSize.ToString() }
+                };
+
+            string url = BuildUrl("products", queryParams);
+            return await GetAsync<PageOfProductsDto>(url);
+        }
 
         public async Task<bool> TestConnectionAsync()
         {
@@ -111,9 +120,7 @@ namespace RitmusShop_keszletkezelo.Api
 
         public async Task<List<CategoryDto>> GetCategoriesAsync()
         {
-            // FONTOS: a pontos URL-t Postman-ben kell tesztelni!
-            // A dokumentáció CategoriesFindAll() metódust említ, 
-            // ami a REST API-ban valószínűleg "categories" lesz.
+
             string url = BuildUrl("categories");
             return await GetAsync<List<CategoryDto>>(url);
         }

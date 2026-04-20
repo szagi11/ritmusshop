@@ -1,6 +1,6 @@
 ﻿namespace RitmusShop_keszletkezelo
 {
-    partial class Form1
+    partial class MainForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -28,44 +28,45 @@
         /// </summary>
         private void InitializeComponent()
         {
-            btnLoadCategories = new Button();
-            lstCategories = new ListBox();
+            flpCategories = new FlowLayoutPanel();
+            flpProducts = new FlowLayoutPanel();
             SuspendLayout();
             // 
-            // btnLoadCategories
+            // flpCategories
             // 
-            btnLoadCategories.Location = new Point(108, 905);
-            btnLoadCategories.Name = "btnLoadCategories";
-            btnLoadCategories.Size = new Size(138, 65);
-            btnLoadCategories.TabIndex = 0;
-            btnLoadCategories.Text = "Kategóriák betöltése";
-            btnLoadCategories.UseVisualStyleBackColor = true;
-            btnLoadCategories.Click += btnLoadCategories_Click;
+            flpCategories.FlowDirection = FlowDirection.TopDown;
+            flpCategories.Location = new Point(12, 26);
+            flpCategories.Name = "flpCategories";
+            flpCategories.Size = new Size(250, 288);
+            flpCategories.TabIndex = 3;
             // 
-            // lstCategories
+            // flpProducts
             // 
-            lstCategories.FormattingEnabled = true;
-            lstCategories.Location = new Point(14, 20);
-            lstCategories.Name = "lstCategories";
-            lstCategories.Size = new Size(459, 804);
-            lstCategories.TabIndex = 1;
+            flpProducts.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            flpProducts.AutoScroll = true;
+            flpProducts.FlowDirection = FlowDirection.TopDown;
+            flpProducts.Location = new Point(268, 26);
+            flpProducts.Name = "flpProducts";
+            flpProducts.Size = new Size(850, 1084);
+            flpProducts.TabIndex = 4;
+            flpProducts.WrapContents = false;
             // 
-            // Form1
+            // MainForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
+            AutoScroll = true;
             ClientSize = new Size(1162, 1266);
-            Controls.Add(lstCategories);
-            Controls.Add(btnLoadCategories);
-            Name = "Form1";
+            Controls.Add(flpProducts);
+            Controls.Add(flpCategories);
+            Name = "MainForm";
             Text = "Form1";
-            Load += Form1_Load;
+            Load += MainForm_Load;
             ResumeLayout(false);
         }
 
         #endregion
-
-        private Button btnLoadCategories;
-        private ListBox lstCategories;
+        private FlowLayoutPanel flpCategories;
+        private FlowLayoutPanel flpProducts;
     }
 }

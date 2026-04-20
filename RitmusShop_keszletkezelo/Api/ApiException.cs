@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RitmusShop_keszletkezelo.DTO
+namespace RitmusShop_keszletkezelo.Api
 {
     public class ApiException : Exception
     {
