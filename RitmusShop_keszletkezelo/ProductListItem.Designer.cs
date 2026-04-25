@@ -2,73 +2,92 @@
 {
     partial class ProductListItem
     {
-        /// <summary> 
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary> 
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
+            if (disposing && (components != null)) components.Dispose();
             base.Dispose(disposing);
         }
 
         #region Component Designer generated code
 
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
+            chkSelect = new CheckBox();
             lblProductName = new Label();
             lblSku = new Label();
+            lblCurrentStock = new Label();
+            txtDelta = new TextBox();
+            btnApply = new Button();
             btnExpand = new Button();
             pnlVariants = new Panel();
             SuspendLayout();
             // 
+            // chkSelect
+            // 
+            chkSelect.Location = new Point(8, 12);
+            chkSelect.Size = new Size(20, 24);
+            chkSelect.ThreeState = true;
+            chkSelect.UseVisualStyleBackColor = true;
+            // 
             // lblProductName
             // 
-            lblProductName.AutoSize = true;
-            lblProductName.Location = new Point(31, 14);
+            lblProductName.AutoSize = false;
+            lblProductName.Location = new Point(35, 12);
             lblProductName.Name = "lblProductName";
-            lblProductName.Size = new Size(50, 20);
-            lblProductName.TabIndex = 0;
-            lblProductName.Text = "label1";
+            lblProductName.Size = new Size(260, 20);
+            lblProductName.Text = "Termék neve";
             // 
             // lblSku
             // 
-            lblSku.AutoSize = true;
-            lblSku.Location = new Point(356, 12);
+            lblSku.AutoSize = false;
+            lblSku.Location = new Point(305, 12);
             lblSku.Name = "lblSku";
-            lblSku.Size = new Size(50, 20);
-            lblSku.TabIndex = 1;
-            lblSku.Text = "label1";
+            lblSku.Size = new Size(130, 20);
+            lblSku.Text = "SKU";
+            // 
+            // lblCurrentStock
+            // 
+            lblCurrentStock.AutoSize = false;
+            lblCurrentStock.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            lblCurrentStock.Location = new Point(445, 12);
+            lblCurrentStock.Name = "lblCurrentStock";
+            lblCurrentStock.Size = new Size(60, 20);
+            lblCurrentStock.Text = "0";
+            // 
+            // txtDelta
+            // 
+            txtDelta.Location = new Point(515, 8);
+            txtDelta.Name = "txtDelta";
+            txtDelta.Size = new Size(60, 27);
+            txtDelta.TextAlign = HorizontalAlignment.Right;
+            txtDelta.Text = "0";
+            // 
+            // btnApply
+            // 
+            btnApply.Location = new Point(580, 7);
+            btnApply.Name = "btnApply";
+            btnApply.Size = new Size(90, 29);
+            btnApply.Text = "Alkalmaz";
+            btnApply.UseVisualStyleBackColor = true;
+            btnApply.Click += btnApply_Click;
             // 
             // btnExpand
             // 
             btnExpand.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnExpand.Location = new Point(530, 8);
+            btnExpand.Location = new Point(680, 7);
             btnExpand.Name = "btnExpand";
-            btnExpand.Size = new Size(94, 29);
-            btnExpand.TabIndex = 2;
+            btnExpand.Size = new Size(110, 29);
             btnExpand.UseVisualStyleBackColor = true;
             btnExpand.Click += btnExpand_Click;
             // 
             // pnlVariants
             // 
             pnlVariants.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            pnlVariants.Location = new Point(31, 45);
+            pnlVariants.Location = new Point(35, 45);
             pnlVariants.Name = "pnlVariants";
-            pnlVariants.Size = new Size(513, 155);
-            pnlVariants.TabIndex = 3;
+            pnlVariants.Size = new Size(755, 155);
             // 
             // ProductListItem
             // 
@@ -76,18 +95,26 @@
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(pnlVariants);
             Controls.Add(btnExpand);
+            Controls.Add(btnApply);
+            Controls.Add(txtDelta);
+            Controls.Add(lblCurrentStock);
             Controls.Add(lblSku);
             Controls.Add(lblProductName);
+            Controls.Add(chkSelect);
             Name = "ProductListItem";
-            Size = new Size(700, 40);
+            Size = new Size(800, 40);
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
 
+        private CheckBox chkSelect;
         private Label lblProductName;
         private Label lblSku;
+        private Label lblCurrentStock;
+        private TextBox txtDelta;
+        private Button btnApply;
         private Button btnExpand;
         private Panel pnlVariants;
     }

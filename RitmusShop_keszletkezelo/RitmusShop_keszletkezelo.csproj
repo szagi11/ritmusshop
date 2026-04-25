@@ -14,6 +14,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Hotcakes.CommerceDTO">
+      <HintPath>..\..\..\..\Downloads\DevSamples\DevSamples\References\Hotcakes.CommerceDTO.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
