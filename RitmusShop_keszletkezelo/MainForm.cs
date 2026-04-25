@@ -27,13 +27,14 @@ namespace RitmusShop_keszletkezelo
 
             if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
             {
-                MessageBox.Show("Hiányzó konfiguráció!",
+                MessageBox.Show("Hiányzó konfiguráció! Ellenõrizd az appsettings.json-t.",
                     "Konfigurációs hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(1);
             }
 
             _service = new HotcakesApiService(baseUrl, apiKey);
 
+            // Event handlerek bekötése (a designer ezeket nem regisztrálja).
             txtSearch.TextChanged += TxtSearch_TextChanged;
             btnBulkApply.Click += BtnBulkApply_Click;
             btnSelectAll.Click += BtnSelectAll_Click;
@@ -77,6 +78,10 @@ namespace RitmusShop_keszletkezelo
             }
         }
 
+        // -----------------------------------------------------------------
+        // KATEGÓRIA KATTINTÁS — TERMÉKLISTA + VIEWMODEL ÖSSZEÁLLÍTÁS
+        // -----------------------------------------------------------------
+
         private async void CategoryButton_Click(object? sender, EventArgs e)
         {
             if (sender is not Button btn || btn.Tag is not string categoryId) return;
@@ -96,12 +101,13 @@ namespace RitmusShop_keszletkezelo
                     UpdateSelectionCounter();
                     return;
                 }
-
+                
+                
                 var fetchTasks = page.Products.Select(async product =>
                 {
                     var variantsTask = _service.GetVariantsForProductAsync(product.Bvin);
                     var inventoryTask = _service.GetInventoryForProductAsync(product.Bvin);
-                    var optionsTask = _service.GetOptionsForProductAsync(product.Bvin);
+                    var optionsTask = SafeGetOptionsAsync(product.Bvin);
                     await Task.WhenAll(variantsTask, inventoryTask, optionsTask);
 
                     return InventoryItemViewModel.Build(
@@ -132,13 +138,32 @@ namespace RitmusShop_keszletkezelo
             }
         }
 
+        /// <summary>
+        /// Védett opció-lekérés: ha egy termékre nem érkezik opció (pl. nincs is),
+        /// üres listával térünk vissza, hogy az egész kategória betöltése ne álljon le.
+        /// A többi metódusnál (variants, inventory) a hibát továbbra is engedjük
+        /// felszállni — azok valódi adatok nélkül nem tudunk dolgozni.
+        /// </summary>
+        private async Task<List<Hotcakes.CommerceDTO.v1.Catalog.OptionDTO>> SafeGetOptionsAsync(string productBvin)
+        {
+            try
+            {
+                return await _service.GetOptionsForProductAsync(productBvin);
+            }
+            catch
+            {
+                return new List<Hotcakes.CommerceDTO.v1.Catalog.OptionDTO>();
+            }
+        }
+
         // -----------------------------------------------------------------
-        // KERESÕ
+        // KERESÕ — élõ szûrés a látható kontrollokon
         // -----------------------------------------------------------------
 
         private void TxtSearch_TextChanged(object? sender, EventArgs e)
         {
             var query = txtSearch.Text.Trim();
+
             flpProducts.SuspendLayout();
             try
             {
@@ -173,6 +198,7 @@ namespace RitmusShop_keszletkezelo
 
             if (visibleItems.Count == 0) return;
 
+            // Toggle: ha bármelyikben már van kijelölés, töröljük; egyébként mindet kijelöljük.
             bool anySelected = visibleItems.Any(i => i.HasAnySelection());
 
             foreach (var item in visibleItems)

@@ -1,4 +1,4 @@
-﻿// File: ViewModels/InventoryItemViewModel.cs
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Hotcakes.CommerceDTO.v1.Catalog;
@@ -31,13 +31,16 @@ namespace RitmusShop_keszletkezelo.ViewModels
             inventoryRows ??= new List<ProductInventoryDTO>();
             options ??= new List<OptionDTO>();
 
-            // Lookup: OptionItem.Bvin (a kiválasztott érték ID-ja) → olvasható név (pl. "M")
-            // Az OptionDTO-ban van Items lista, minden Item-nek Bvin + Name (a "n" mező).
+            // GUID-normalizált lookup tábla: a Hotcakes API a SelectionData-t
+            // kötőjelek nélkül, az OptionItem.Bvin-t kötőjelekkel adja vissza,
+            // ezért egységes "N" formátumra ("32 karakter, kötőjel nélkül")
+            // hozzuk mindkét oldalt, hogy összepasszintsanak.
+            // IsLabel=true elemek placeholderek ("- Válasszon -"), kihagyjuk.
             var labelLookup = options
                 .Where(o => o.Items != null)
                 .SelectMany(o => o.Items)
-                .Where(item => !string.IsNullOrEmpty(item.Bvin))
-                .GroupBy(item => item.Bvin)
+                .Where(item => !item.IsLabel && !string.IsNullOrEmpty(item.Bvin))
+                .GroupBy(item => NormalizeGuid(item.Bvin))
                 .ToDictionary(g => g.Key, g => g.First().Name ?? string.Empty);
 
             var vm = new InventoryItemViewModel
@@ -63,27 +66,41 @@ namespace RitmusShop_keszletkezelo.ViewModels
         }
 
         /// <summary>
-        /// A variáns olvasható nevének összeállítása a Selections listából.
-        /// Selections = [{OptionBvin: "...", SelectionData: "ITEM_BVIN"}, ...]
-        /// A SelectionData az OptionItemDTO.Bvin értéke, amit a labelLookup-ban
-        /// keresünk. Több opció (pl. méret + szín) esetén vesszővel összefűzzük.
+        /// A variáns olvasható neve a Selections lista alapján.
+        /// A SelectionData-t normalizáljuk, hogy ugyanabban a formátumban
+        /// keressük, mint amilyenben a labelLookup kulcsai vannak.
         /// </summary>
         private static string BuildVariantDisplayName(
             VariantDTO v, Dictionary<string, string> labelLookup)
         {
             if (v.Selections == null || v.Selections.Count == 0)
-                return v.Sku ?? "(névtelen)";
+                return "(névtelen)";
 
             var labels = v.Selections
-                .Select(s => s.SelectionData)
+                .Select(s => NormalizeGuid(s.SelectionData))
                 .Where(id => !string.IsNullOrEmpty(id))
-                .Select(id => labelLookup.TryGetValue(id!, out var lbl) ? lbl : id!)
-                .Where(lbl => !string.IsNullOrWhiteSpace(lbl))
+                .Select(id => labelLookup.TryGetValue(id, out var lbl) && !string.IsNullOrWhiteSpace(lbl)
+                    ? lbl
+                    : null)
+                .Where(lbl => lbl != null)
                 .ToList();
 
             return labels.Count > 0
-                ? string.Join(", ", labels)
-                : v.Sku ?? "(névtelen)";
+                ? string.Join(", ", labels!)
+                : "(ismeretlen)";
+        }
+
+        /// <summary>
+        /// Egységes GUID formára hozza az inputot. A Hotcakes API egyes helyeken
+        /// kötőjelekkel ("D" formátum, 36 char), máshol kötőjelek nélkül 
+        /// ("N" formátum, 32 char) adja vissza a GUID-okat. Itt mindkét formát
+        /// 32 karakteres kisbetűs alakra hozzuk.
+        /// </summary>
+        private static string NormalizeGuid(string? raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return string.Empty;
+            if (Guid.TryParse(raw, out var g)) return g.ToString("N");
+            return raw.Replace("-", string.Empty).ToLowerInvariant();
         }
     }
 
@@ -93,8 +110,6 @@ namespace RitmusShop_keszletkezelo.ViewModels
         public string Sku { get; set; } = null!;
         public string DisplayName { get; set; } = null!;
         public ProductInventoryDTO? Inventory { get; set; }
-
-        /// <summary>Tömeges műveletekhez: be van-e pipálva a sora.</summary>
         public bool IsSelected { get; set; }
 
         public int QuantityOnHand => Inventory?.QuantityOnHand ?? 0;

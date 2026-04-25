@@ -9,13 +9,6 @@ using Newtonsoft.Json;
 
 namespace RitmusShop_keszletkezelo.Services
 {
-    /// <summary>
-    /// Saját Hotcakes REST kliens, HttpClient + Newtonsoft.Json alapon.
-    /// Azért nem használjuk a gyári Hotcakes.CommerceDTO.v1.Client.Api proxyt,
-    /// mert annak belső JSON parsere a System.Web.Extensions.dll-re támaszkodik,
-    /// ami nem létezik .NET 8 alatt. A gyári DTO-kat (CategorySnapshotDTO, ProductDTO,
-    /// VariantDTO, ProductInventoryDTO, PageOfProducts) viszont megtartjuk.
-    /// </summary>
     public class HotcakesApiService : IDisposable
     {
         private readonly HttpClient _http;
@@ -32,7 +25,6 @@ namespace RitmusShop_keszletkezelo.Services
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new ArgumentNullException(nameof(apiKey));
 
-            // Garantáljuk, hogy a host '/'-ra végződjön — különben a relatív URI rosszul fűződik.
             if (!baseUrl.EndsWith("/")) baseUrl += "/";
 
             _http = new HttpClient
@@ -135,10 +127,6 @@ namespace RitmusShop_keszletkezelo.Services
             return await DeserializeResponseAsync<T>(httpResp, operationName);
         }
 
-        /// <summary>
-        /// A választ ApiResponseEnvelope-ba deszerializálja, kicsomagolja a Content-et,
-        /// és ha vannak Errors, kivételt dob érthető üzenettel.
-        /// </summary>
         private static async Task<T?> DeserializeResponseAsync<T>(
             HttpResponseMessage httpResp, string operationName)
         {
