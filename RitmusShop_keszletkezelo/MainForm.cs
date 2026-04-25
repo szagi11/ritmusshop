@@ -1,18 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Hotcakes.CommerceDTO.v1.Catalog;
 using Microsoft.Extensions.Configuration;
 using RitmusShop_keszletkezelo.Services;
 using RitmusShop_keszletkezelo.ViewModels;
-using System.Drawing;
 
 namespace RitmusShop_keszletkezelo
 {
     public partial class MainForm : Form
     {
         private readonly HotcakesApiService _service;
+        private Button? _activeCategoryButton;
+
+        // A kategóriák cache-elve, hogy ne kelljen újra lekérni
+        private List<CategorySnapshotDTO> _allCategories = new();
+        private CategorySnapshotDTO? _currentParentCategory;
 
         public MainForm()
         {
@@ -35,10 +41,11 @@ namespace RitmusShop_keszletkezelo
 
             _service = new HotcakesApiService(baseUrl, apiKey);
 
-            // Event handlerek bekötése (a designer ezeket nem regisztrálja).
             txtSearch.TextChanged += TxtSearch_TextChanged;
             btnBulkApply.Click += BtnBulkApply_Click;
             btnSelectAll.Click += BtnSelectAll_Click;
+            cmbSubcategory.SelectedIndexChanged += CmbSubcategory_SelectedIndexChanged;
+            flpProducts.Resize += (s, e) => ResizeAllCards();
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -48,23 +55,24 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // KATEGÓRIÁK BETÖLTÉSE
+        // KATEGÓRIÁK BETÖLTÉSE (induláskor egyszer)
         // -----------------------------------------------------------------
 
         private async void MainForm_Load(object? sender, EventArgs e)
         {
             try
             {
-                var categories = await _service.GetCategoriesAsync();
+                _allCategories = await _service.GetCategoriesAsync();
 
-                foreach (var cat in categories
+                foreach (var cat in _allCategories
                     .Where(c => string.IsNullOrEmpty(c.ParentId))
                     .OrderBy(c => c.SortOrder))
                 {
                     var btnCat = new Button
                     {
                         Text = cat.Name,
-                        Tag = cat.Bvin,
+                        Tag = cat,
+                        Width = 250,
                         Height = 45,
                         Font = UiTheme.BodyFont,
                         FlatStyle = FlatStyle.Flat,
@@ -73,7 +81,8 @@ namespace RitmusShop_keszletkezelo
                         TextAlign = ContentAlignment.MiddleLeft,
                         Padding = new Padding(15, 0, 0, 0),
                         Margin = new Padding(0, 3, 0, 3),
-                        Cursor = Cursors.Hand
+                        Cursor = Cursors.Hand,
+                        AutoEllipsis = true
                     };
                     btnCat.FlatAppearance.BorderColor = UiTheme.CardBorder;
                     btnCat.FlatAppearance.BorderSize = 1;
@@ -89,40 +98,117 @@ namespace RitmusShop_keszletkezelo
             }
         }
 
-        // -----------------------------------------------------------------
-        // KATEGÓRIA KATTINTÁS — TERMÉKLISTA + VIEWMODEL ÖSSZEÁLLÍTÁS
-        // -----------------------------------------------------------------
-
         private async void CategoryButton_Click(object? sender, EventArgs e)
         {
-            if (sender is not Button btn || btn.Tag is not string categoryId) return;
+            if (sender is not Button btn || btn.Tag is not CategorySnapshotDTO category) return;
 
+            // Aktív kategória vizuális kiemelése
+            if (_activeCategoryButton != null)
+            {
+                _activeCategoryButton.BackColor = UiTheme.CardBackground;
+                _activeCategoryButton.ForeColor = UiTheme.TextPrimary;
+                _activeCategoryButton.FlatAppearance.BorderColor = UiTheme.CardBorder;
+                _activeCategoryButton.Font = UiTheme.BodyFont;
+            }
+            btn.BackColor = UiTheme.AccentLight;
+            btn.ForeColor = UiTheme.Accent;
+            btn.FlatAppearance.BorderColor = UiTheme.Accent;
+            btn.Font = new Font(UiTheme.BodyFont, FontStyle.Bold);
+            _activeCategoryButton = btn;
+
+            _currentParentCategory = category;
+
+            PopulateSubcategoryDropdown(category);
+            await LoadProductsForCategoryAsync(category.Bvin ?? string.Empty);
+        }
+
+        // -----------------------------------------------------------------
+        // ALKATEGÓRIA COMBOBOX
+        // -----------------------------------------------------------------
+
+        private void PopulateSubcategoryDropdown(CategorySnapshotDTO parent)
+        {
+            cmbSubcategory.SelectedIndexChanged -= CmbSubcategory_SelectedIndexChanged;
+            cmbSubcategory.Items.Clear();
+
+            // Elsõ elem: "Összes alkategória"
+            cmbSubcategory.Items.Add(new SubcategoryItem
+            {
+                DisplayText = "Összes alkategória",
+                CategoryBvin = parent.Bvin ?? string.Empty
+            });
+
+            // A kiválasztott parent alá tartozó alkategóriák
+            var subs = _allCategories
+                .Where(c => c.ParentId == parent.Bvin)
+                .OrderBy(c => c.SortOrder)
+                .ToList();
+
+            foreach (var sub in subs)
+            {
+                cmbSubcategory.Items.Add(new SubcategoryItem
+                {
+                    DisplayText = sub.Name ?? string.Empty,
+                    CategoryBvin = sub.Bvin ?? string.Empty
+                });
+            }
+
+            cmbSubcategory.SelectedIndex = 0;
+            cmbSubcategory.SelectedIndexChanged += CmbSubcategory_SelectedIndexChanged;
+        }
+
+        private async void CmbSubcategory_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (cmbSubcategory.SelectedItem is not SubcategoryItem selected) return;
+            await LoadProductsForCategoryAsync(selected.CategoryBvin);
+        }
+
+        // -----------------------------------------------------------------
+        // TERMÉKEK BETÖLTÉSE
+        // -----------------------------------------------------------------
+
+        private async Task LoadProductsForCategoryAsync(string categoryBvin)
+        {
             Cursor = Cursors.WaitCursor;
             flpProducts.Controls.Clear();
             txtSearch.Text = string.Empty;
 
             try
             {
-                var page = await _service.GetProductsForCategoryAsync(categoryId);
+                var page = await _service.GetProductsForCategoryAsync(categoryBvin);
 
                 if (page?.Products == null || page.Products.Count == 0)
                 {
-                    var lbl = new Label { Text = "Ebben a kategóriában nincs termék.", AutoSize = true };
+                    var lbl = new Label
+                    {
+                        Text = "Ebben a kategóriában nincs termék.",
+                        AutoSize = true,
+                        Font = UiTheme.BodyFont,
+                        ForeColor = UiTheme.TextSecondary
+                    };
                     flpProducts.Controls.Add(lbl);
                     UpdateSelectionCounter();
                     return;
                 }
-                
-                
+
+                // Termékenként párhuzamosan: variánsok, készlet, opciók, kategóriák.
+                // Az opció és kategória lekérdezés "védett": ha nincs adat, üres
+                // listával folytatjuk, hogy az egész kategória betöltése ne álljon le.
                 var fetchTasks = page.Products.Select(async product =>
                 {
                     var variantsTask = _service.GetVariantsForProductAsync(product.Bvin);
                     var inventoryTask = _service.GetInventoryForProductAsync(product.Bvin);
                     var optionsTask = SafeGetOptionsAsync(product.Bvin);
-                    await Task.WhenAll(variantsTask, inventoryTask, optionsTask);
+                    var catsTask = SafeGetCategoriesForProductAsync(product.Bvin);
+                    await Task.WhenAll(variantsTask, inventoryTask, optionsTask, catsTask);
 
                     return InventoryItemViewModel.Build(
-                        product, variantsTask.Result, inventoryTask.Result, optionsTask.Result);
+                        product,
+                        variantsTask.Result,
+                        inventoryTask.Result,
+                        optionsTask.Result,
+                        catsTask.Result,
+                        _allCategories);
                 });
 
                 var viewModels = await Task.WhenAll(fetchTasks);
@@ -132,7 +218,9 @@ namespace RitmusShop_keszletkezelo
                 {
                     var item = new ProductListItem();
                     item.Setup(_service, vm);
+                    item.Width = flpProducts.ClientSize.Width - 25;
                     item.SelectionChanged += (s, ev) => UpdateSelectionCounter();
+                    item.ExpandRequested += ProductItem_ExpandRequested;
                     flpProducts.Controls.Add(item);
                 }
                 flpProducts.ResumeLayout();
@@ -149,20 +237,48 @@ namespace RitmusShop_keszletkezelo
             }
         }
 
-        private async Task<List<Hotcakes.CommerceDTO.v1.Catalog.OptionDTO>> SafeGetOptionsAsync(string productBvin)
+        private async Task<List<OptionDTO>> SafeGetOptionsAsync(string productBvin)
         {
-            try
-            {
-                return await _service.GetOptionsForProductAsync(productBvin);
-            }
-            catch
-            {
-                return new List<Hotcakes.CommerceDTO.v1.Catalog.OptionDTO>();
-            }
+            try { return await _service.GetOptionsForProductAsync(productBvin); }
+            catch { return new List<OptionDTO>(); }
+        }
+
+        private async Task<List<CategorySnapshotDTO>> SafeGetCategoriesForProductAsync(string productBvin)
+        {
+            try { return await _service.GetCategoriesForProductAsync(productBvin); }
+            catch { return new List<CategorySnapshotDTO>(); }
         }
 
         // -----------------------------------------------------------------
-        // KERESÕ — élõ szûrés a látható kontrollokon
+        // KIBONTÁS — csak egy kártya egyszerre nyitva
+        // -----------------------------------------------------------------
+
+        private void ProductItem_ExpandRequested(object? sender, EventArgs e)
+        {
+            if (sender is not ProductListItem opener) return;
+
+            foreach (var other in flpProducts.Controls.OfType<ProductListItem>())
+            {
+                if (other != opener && other.IsExpanded)
+                    other.Collapse();
+            }
+            opener.ToggleExpanded();
+        }
+
+        // -----------------------------------------------------------------
+        // KÁRTYA SZÉLESSÉG ÚJRASZÁMÍTÁS
+        // -----------------------------------------------------------------
+
+        private void ResizeAllCards()
+        {
+            int newWidth = flpProducts.ClientSize.Width - 25;
+            if (newWidth < 200) return;
+            foreach (var item in flpProducts.Controls.OfType<ProductListItem>())
+                item.Width = newWidth;
+        }
+
+        // -----------------------------------------------------------------
+        // KERESÕ
         // -----------------------------------------------------------------
 
         private void TxtSearch_TextChanged(object? sender, EventArgs e)
@@ -193,7 +309,7 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // MIND KIJELÖLÉSE / TÖRLÉSE — minden látható termékre
+        // MIND KIJELÖLÉSE / TÖRLÉSE
         // -----------------------------------------------------------------
 
         private void BtnSelectAll_Click(object? sender, EventArgs e)
@@ -202,8 +318,6 @@ namespace RitmusShop_keszletkezelo
                 .Where(i => i.Visible).ToList();
 
             if (visibleItems.Count == 0) return;
-
-            // Toggle: ha bármelyikben már van kijelölés, töröljük; egyébként mindet kijelöljük.
             bool anySelected = visibleItems.Any(i => i.HasAnySelection());
 
             foreach (var item in visibleItems)
@@ -211,12 +325,11 @@ namespace RitmusShop_keszletkezelo
                 if (anySelected) item.ClearAllSelections();
                 else item.SelectAll();
             }
-
             UpdateSelectionCounter();
         }
 
         // -----------------------------------------------------------------
-        // TÖMEGES MÓDOSÍTÁS — csak a kijelölt sorokra
+        // TÖMEGES MÓDOSÍTÁS
         // -----------------------------------------------------------------
 
         private async void BtnBulkApply_Click(object? sender, EventArgs e)
@@ -266,6 +379,17 @@ namespace RitmusShop_keszletkezelo
                 btnBulkApply.Enabled = true;
                 Cursor = Cursors.Default;
             }
+        }
+
+        // -----------------------------------------------------------------
+        // SEGÉD TÍPUS — alkategória ComboBox elem
+        // -----------------------------------------------------------------
+
+        private class SubcategoryItem
+        {
+            public string DisplayText { get; set; } = string.Empty;
+            public string CategoryBvin { get; set; } = string.Empty;
+            public override string ToString() => DisplayText;
         }
     }
 }

@@ -11,7 +11,6 @@ namespace RitmusShop_keszletkezelo
 {
     public partial class ProductListItem : UserControl
     {
-        private const int CardWidth = 290;
         private const int CardCollapsedHeight = 145;
         private const int VariantRowHeight = 36;
         private const int VariantBulkRowHeight = 38;
@@ -26,16 +25,16 @@ namespace RitmusShop_keszletkezelo
         private Button? _btnVariantBulkApply;
         private Button? _btnSelectAllVariants;
 
-        // ----- ESEMÉNYEK -----
         public event EventHandler? SelectionChanged;
         public event EventHandler? ExpandRequested;
+
+        public bool IsExpanded => pnlVariants.Visible && pnlVariants.Height > 10;
 
         public ProductListItem()
         {
             InitializeComponent();
             ApplyCardStyling();
-            pnlVariants.Visible = false;
-            this.Size = new Size(CardWidth, CardCollapsedHeight);
+            this.Height = CardCollapsedHeight;
             btnExpand.Text = "Méretek ▾";
             chkSelect.CheckedChanged += ChkSelect_CheckedChanged;
         }
@@ -43,12 +42,20 @@ namespace RitmusShop_keszletkezelo
         private void ApplyCardStyling()
         {
             this.BackColor = UiTheme.CardBackground;
-            this.Margin = new Padding(8);
+            this.Margin = new Padding(0, 0, 0, 8);
 
             this.Paint += (s, e) =>
             {
+                bool isSelected = _vm != null && HasAnySelection();
                 var rect = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
-                using var pen = new Pen(UiTheme.CardBorder, 1);
+
+                if (isSelected)
+                {
+                    using var brush = new SolidBrush(UiTheme.AccentLight);
+                    e.Graphics.FillRectangle(brush, rect);
+                }
+
+                using var pen = new Pen(isSelected ? UiTheme.Accent : UiTheme.CardBorder, isSelected ? 2 : 1);
                 e.Graphics.DrawRectangle(pen, rect);
             };
 
@@ -57,6 +64,9 @@ namespace RitmusShop_keszletkezelo
 
             lblSku.Font = UiTheme.BodyFont;
             lblSku.ForeColor = UiTheme.TextSecondary;
+
+            lblCategory.Font = UiTheme.BodyFont;
+            lblCategory.ForeColor = UiTheme.TextSecondary;
 
             lblStockLabel.Font = UiTheme.BodyFont;
             lblStockLabel.ForeColor = UiTheme.TextSecondary;
@@ -68,9 +78,10 @@ namespace RitmusShop_keszletkezelo
             txtDelta.BorderStyle = BorderStyle.FixedSingle;
 
             btnApply.FlatStyle = FlatStyle.Flat;
-            btnApply.BackColor = UiTheme.Accent;
-            btnApply.ForeColor = Color.White;
-            btnApply.FlatAppearance.BorderSize = 0;
+            btnApply.BackColor = UiTheme.CardBackground;
+            btnApply.ForeColor = UiTheme.Accent;
+            btnApply.FlatAppearance.BorderColor = UiTheme.Accent;
+            btnApply.FlatAppearance.BorderSize = 1;
             btnApply.Font = UiTheme.ButtonFont;
 
             btnExpand.FlatStyle = FlatStyle.Flat;
@@ -78,8 +89,6 @@ namespace RitmusShop_keszletkezelo
             btnExpand.ForeColor = UiTheme.TextPrimary;
             btnExpand.FlatAppearance.BorderColor = UiTheme.CardBorder;
             btnExpand.Font = UiTheme.ButtonFont;
-
-            pnlVariants.BackColor = UiTheme.CardBackground;
         }
 
         public void Setup(HotcakesApiService service, InventoryItemViewModel vm)
@@ -89,6 +98,7 @@ namespace RitmusShop_keszletkezelo
 
             lblProductName.Text = vm.ProductName;
             lblSku.Text = vm.Sku;
+            lblCategory.Text = string.IsNullOrEmpty(vm.CategoryDisplay) ? "" : $"Kategória: {vm.CategoryDisplay}";
             lblCurrentStock.Text = vm.TotalQuantityOnHand.ToString();
             txtDelta.Text = "0";
 
@@ -97,6 +107,7 @@ namespace RitmusShop_keszletkezelo
                 txtDelta.Visible = false;
                 btnApply.Visible = false;
                 btnExpand.Visible = true;
+                btnExpand.Text = "Méretek ▾";
             }
             else
             {
@@ -107,22 +118,6 @@ namespace RitmusShop_keszletkezelo
 
             UpdateProductCheckboxState();
         }
-
-        // ----- KÜLSŐ KEZELÉS: kibontás/bezárás -----
-
-        public bool IsExpanded => pnlVariants.Visible;
-
-        public void Collapse()
-        {
-            if (pnlVariants.Visible)
-            {
-                pnlVariants.Visible = false;
-                this.Size = new Size(CardWidth, CardCollapsedHeight);
-                btnExpand.Text = "Méretek ▾";
-            }
-        }
-
-        // ----- KIJELÖLT SOROK -----
 
         public IEnumerable<Hotcakes.CommerceDTO.v1.Catalog.ProductInventoryDTO> GetSelectedInventories()
         {
@@ -152,8 +147,6 @@ namespace RitmusShop_keszletkezelo
         private static bool ContainsCi(string? haystack, string needle) =>
             haystack != null && haystack.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
 
-        // ----- CHECKBOX -----
-
         private void ChkSelect_CheckedChanged(object? sender, EventArgs e)
         {
             if (_suppressCheckEvent) return;
@@ -175,10 +168,11 @@ namespace RitmusShop_keszletkezelo
                 _vm.IsSelected = selected;
             }
 
+            this.Invalidate();
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private void UpdateProductCheckboxState()
+        public void UpdateProductCheckboxState()
         {
             _suppressCheckEvent = true;
             try
@@ -203,6 +197,7 @@ namespace RitmusShop_keszletkezelo
             {
                 _suppressCheckEvent = false;
             }
+            this.Invalidate();
         }
 
         private void OnVariantSelectionChanged(object? sender, EventArgs e)
@@ -211,28 +206,38 @@ namespace RitmusShop_keszletkezelo
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        // ----- KIBONTÁS -----
+        // -----------------------------------------------------------------
+        // KIBONTÁS
+        // -----------------------------------------------------------------
 
         private void btnExpand_Click(object? sender, EventArgs e)
         {
-            if (pnlVariants.Visible)
-            {
-                pnlVariants.Visible = false;
-                this.Size = new Size(CardWidth, CardCollapsedHeight);
-                btnExpand.Text = "Méretek ▾";
-            }
-            else
-            {
-                ExpandRequested?.Invoke(this, EventArgs.Empty);
+            ExpandRequested?.Invoke(this, EventArgs.Empty);
+        }
 
-                if (!_variantsLoaded) PopulateVariantPanel();
+        public void ToggleExpanded()
+        {
+            if (IsExpanded) Collapse();
+            else Expand();
+        }
 
-                pnlVariants.Visible = true;
-                int variantsHeight = _vm.Variants.Count * VariantRowHeight + VariantBulkRowHeight + 8;
-                this.Size = new Size(CardWidth, CardCollapsedHeight + VariantPanelTopPadding + variantsHeight);
-                btnExpand.Text = "Méretek ▴";
-                this.Parent?.PerformLayout();
-            }
+        public void Collapse()
+        {
+            pnlVariants.Visible = false;
+            pnlVariants.Height = 5;
+            this.Height = CardCollapsedHeight;
+            btnExpand.Text = "Méretek ▾";
+        }
+
+        private void Expand()
+        {
+            if (!_variantsLoaded) PopulateVariantPanel();
+            pnlVariants.Visible = true;
+            int variantsHeight = _vm.Variants.Count * VariantRowHeight + VariantBulkRowHeight + 8;
+            pnlVariants.Height = variantsHeight;
+            this.Height = CardCollapsedHeight + VariantPanelTopPadding + variantsHeight;
+            btnExpand.Text = "Méretek ▴";
+            this.Parent?.PerformLayout();
         }
 
         private void PopulateVariantPanel()
@@ -247,6 +252,7 @@ namespace RitmusShop_keszletkezelo
                 row.Setup(_service, variant);
                 row.Location = new Point(5, y);
                 row.Width = pnlVariants.Width - 10;
+                row.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
                 row.SelectionChanged += OnVariantSelectionChanged;
                 pnlVariants.Controls.Add(row);
                 y += VariantRowHeight;
@@ -255,7 +261,7 @@ namespace RitmusShop_keszletkezelo
             _btnSelectAllVariants = new Button
             {
                 Location = new Point(5, y + 4),
-                Size = new Size(95, 28),
+                Size = new Size(110, 28),
                 Text = "Mind ki",
                 FlatStyle = FlatStyle.Flat,
                 BackColor = UiTheme.CardBackground,
@@ -267,8 +273,8 @@ namespace RitmusShop_keszletkezelo
 
             _txtVariantBulkDelta = new TextBox
             {
-                Location = new Point(110, 5 + y),
-                Size = new Size(50, 25),
+                Location = new Point(125, 5 + y),
+                Size = new Size(60, 25),
                 TextAlign = HorizontalAlignment.Right,
                 Text = "0",
                 Font = UiTheme.BodyFont,
@@ -276,15 +282,16 @@ namespace RitmusShop_keszletkezelo
             };
             _btnVariantBulkApply = new Button
             {
-                Location = new Point(165, 4 + y),
-                Size = new Size(115, 28),
+                Location = new Point(195, 4 + y),
+                Size = new Size(120, 28),
                 Text = "Kijelöltekre",
                 FlatStyle = FlatStyle.Flat,
-                BackColor = UiTheme.Accent,
-                ForeColor = Color.White,
+                BackColor = UiTheme.CardBackground,
+                ForeColor = UiTheme.Accent,
                 Font = UiTheme.ButtonFont
             };
-            _btnVariantBulkApply.FlatAppearance.BorderSize = 0;
+            _btnVariantBulkApply.FlatAppearance.BorderColor = UiTheme.Accent;
+            _btnVariantBulkApply.FlatAppearance.BorderSize = 1;
             _btnVariantBulkApply.Click += BtnVariantBulkApply_Click;
 
             pnlVariants.Controls.Add(_btnSelectAllVariants);
@@ -295,8 +302,6 @@ namespace RitmusShop_keszletkezelo
             pnlVariants.ResumeLayout();
             _variantsLoaded = true;
         }
-
-        // ----- VARIÁNS-SZINTŰ TÖMEGES -----
 
         private void BtnSelectAllVariants_Click(object? sender, EventArgs e)
         {
@@ -358,8 +363,6 @@ namespace RitmusShop_keszletkezelo
             }
         }
 
-        // ----- KÜLSŐ BULK -----
-
         public async Task<BulkResult> ApplySelectedAsync(int delta)
         {
             var result = new BulkResult();
@@ -410,8 +413,6 @@ namespace RitmusShop_keszletkezelo
             UpdateProductCheckboxState();
         }
 
-        // ----- HELPER -----
-
         private async Task<bool> TryUpdateInventory(
             Hotcakes.CommerceDTO.v1.Catalog.ProductInventoryDTO inv, int delta)
         {
@@ -439,8 +440,6 @@ namespace RitmusShop_keszletkezelo
                 row.RefreshDisplay();
         }
 
-        // ----- KÖZVETLEN MENTÉS -----
-
         private async void btnApply_Click(object? sender, EventArgs e)
         {
             if (_vm?.MainInventory == null)
@@ -466,11 +465,6 @@ namespace RitmusShop_keszletkezelo
                 {
                     lblCurrentStock.Text = _vm.TotalQuantityOnHand.ToString();
                     txtDelta.Text = "0";
-                }
-                else
-                {
-                    MessageBox.Show("Sikertelen mentés vagy 0 alá menne.",
-                        "Hiba", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             finally

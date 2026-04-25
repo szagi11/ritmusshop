@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Hotcakes.CommerceDTO.v1.Catalog;
 using RitmusShop_keszletkezelo.Services;
 using RitmusShop_keszletkezelo.ViewModels;
-using System.Drawing;
 
 namespace RitmusShop_keszletkezelo
 {
@@ -14,6 +14,7 @@ namespace RitmusShop_keszletkezelo
         private VariantViewModel _variant = null!;
 
         public event EventHandler? SelectionChanged;
+        public event EventHandler? StockChanged;
 
         public VariantListItem()
         {
@@ -25,12 +26,22 @@ namespace RitmusShop_keszletkezelo
                 c.Font = UiTheme.BodyFont;
 
             btnApply.FlatStyle = FlatStyle.Flat;
-            btnApply.BackColor = UiTheme.Accent;
-            btnApply.ForeColor = Color.White;
-            btnApply.FlatAppearance.BorderSize = 0;
+            btnApply.BackColor = UiTheme.CardBackground;
+            btnApply.ForeColor = UiTheme.Accent;
+            btnApply.FlatAppearance.BorderColor = UiTheme.Accent;
+            btnApply.FlatAppearance.BorderSize = 1;
             btnApply.Font = UiTheme.ButtonFont;
 
             txtDelta.BorderStyle = BorderStyle.FixedSingle;
+
+            this.Paint += (s, e) =>
+            {
+                if (_variant != null && _variant.IsSelected)
+                {
+                    using var brush = new SolidBrush(UiTheme.AccentLight);
+                    e.Graphics.FillRectangle(brush, this.ClientRectangle);
+                }
+            };
         }
 
         public void Setup(HotcakesApiService service, VariantViewModel variant)
@@ -43,12 +54,14 @@ namespace RitmusShop_keszletkezelo
             txtDelta.Text = "0";
             chkSelect.Checked = variant.IsSelected;
         }
+
         public void SetSelectedSilently(bool selected)
         {
             _variant.IsSelected = selected;
             chkSelect.CheckedChanged -= ChkSelect_CheckedChanged;
             chkSelect.Checked = selected;
             chkSelect.CheckedChanged += ChkSelect_CheckedChanged;
+            this.Invalidate();
         }
 
         public void RefreshDisplay()
@@ -60,6 +73,7 @@ namespace RitmusShop_keszletkezelo
         private void ChkSelect_CheckedChanged(object? sender, EventArgs e)
         {
             _variant.IsSelected = chkSelect.Checked;
+            this.Invalidate();
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -99,6 +113,8 @@ namespace RitmusShop_keszletkezelo
 
                 lblCurrentStock.Text = _variant.QuantityOnHand.ToString();
                 txtDelta.Text = "0";
+
+                StockChanged?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {

@@ -30,6 +30,8 @@
             pnlLeft = new Panel();
             flpCategories = new FlowLayoutPanel();
             lblFilters = new Label();
+            lblSubcategory = new Label();
+            cmbSubcategory = new ComboBox();
             pnlHeader.SuspendLayout();
             pnlMain.SuspendLayout();
             pnlRight.SuspendLayout();
@@ -159,7 +161,7 @@
             // 
             // pnlSearchBar
             // 
-            pnlSearchBar.BackColor = Color.White;
+            pnlSearchBar.BackColor = Color.FromArgb(245, 242, 236);
             pnlSearchBar.Controls.Add(txtSearch);
             pnlSearchBar.Controls.Add(lblSearch);
             pnlSearchBar.Dock = DockStyle.Top;
@@ -227,6 +229,20 @@
             lblFilters.Text = "Kategóriák";
             lblFilters.TextAlign = ContentAlignment.MiddleCenter;
             // 
+            // lblSubcategory
+            // 
+            lblSubcategory.Location = new Point(0, 0);
+            lblSubcategory.Name = "lblSubcategory";
+            lblSubcategory.Size = new Size(100, 23);
+            lblSubcategory.TabIndex = 0;
+            // 
+            // cmbSubcategory
+            // 
+            cmbSubcategory.Location = new Point(0, 0);
+            cmbSubcategory.Name = "cmbSubcategory";
+            cmbSubcategory.Size = new Size(121, 28);
+            cmbSubcategory.TabIndex = 0;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -268,5 +284,7 @@
         private Label lblBulkInfo;
         private TextBox txtBulkDelta;
         private Button btnBulkApply;
+        private Label lblSubcategory;
+        private ComboBox cmbSubcategory;
     }
 }

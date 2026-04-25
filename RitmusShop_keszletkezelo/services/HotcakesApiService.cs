@@ -179,6 +179,14 @@ namespace RitmusShop_keszletkezelo.Services
             }
         }
 
+        public async Task<List<CategorySnapshotDTO>> GetCategoriesForProductAsync(string productBvin)
+        {
+            var resp = await GetAsync<List<CategorySnapshotDTO>>(
+                $"categories/?byproduct={Uri.EscapeDataString(productBvin)}",
+                $"Termék kategóriái lekérése (termék: {productBvin})");
+            return resp ?? new List<CategorySnapshotDTO>();
+        }
+
         private string AppendApiKey(string relativePath)
         {
             var sep = relativePath.Contains('?') ? "&" : "?";

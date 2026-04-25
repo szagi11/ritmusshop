@@ -10,6 +10,7 @@ namespace RitmusShop_keszletkezelo.ViewModels
         public string ProductBvin { get; set; } = null!;
         public string ProductName { get; set; } = null!;
         public string Sku { get; set; } = null!;
+        public string CategoryDisplay { get; set; } = string.Empty;
         public ProductInventoryDTO? MainInventory { get; set; }
         public List<VariantViewModel> Variants { get; set; } = new();
         public bool IsSelected { get; set; }
@@ -25,17 +26,16 @@ namespace RitmusShop_keszletkezelo.ViewModels
             ProductDTO product,
             List<VariantDTO> variants,
             List<ProductInventoryDTO> inventoryRows,
-            List<OptionDTO> options)
+            List<OptionDTO> options,
+            List<CategorySnapshotDTO> productCategories,
+            List<CategorySnapshotDTO> allCategories)
         {
             variants ??= new List<VariantDTO>();
             inventoryRows ??= new List<ProductInventoryDTO>();
             options ??= new List<OptionDTO>();
+            productCategories ??= new List<CategorySnapshotDTO>();
+            allCategories ??= new List<CategorySnapshotDTO>();
 
-            // GUID-normalizált lookup tábla: a Hotcakes API a SelectionData-t
-            // kötőjelek nélkül, az OptionItem.Bvin-t kötőjelekkel adja vissza,
-            // ezért egységes "N" formátumra ("32 karakter, kötőjel nélkül")
-            // hozzuk mindkét oldalt, hogy összepasszintsanak.
-            // IsLabel=true elemek placeholderek ("- Válasszon -"), kihagyjuk.
             var labelLookup = options
                 .Where(o => o.Items != null)
                 .SelectMany(o => o.Items)
@@ -48,6 +48,7 @@ namespace RitmusShop_keszletkezelo.ViewModels
                 ProductBvin = product.Bvin ?? string.Empty,
                 ProductName = product.ProductName ?? string.Empty,
                 Sku = product.Sku ?? string.Empty,
+                CategoryDisplay = ResolveCategoryDisplay(productCategories, allCategories),
                 MainInventory = inventoryRows
                     .FirstOrDefault(i => string.IsNullOrEmpty(i.VariantId))
             };
@@ -65,11 +66,43 @@ namespace RitmusShop_keszletkezelo.ViewModels
             return vm;
         }
 
-        /// <summary>
-        /// A variáns olvasható neve a Selections lista alapján.
-        /// A SelectionData-t normalizáljuk, hogy ugyanabban a formátumban
-        /// keressük, mint amilyenben a labelLookup kulcsai vannak.
-        /// </summary>
+        private static string ResolveCategoryDisplay(
+            List<CategorySnapshotDTO> productCats,
+            List<CategorySnapshotDTO> allCats)
+        {
+            if (productCats.Count == 0) return string.Empty;
+
+            var allByBvin = allCats
+                .Where(c => !string.IsNullOrEmpty(c.Bvin))
+                .ToDictionary(c => c.Bvin!, c => c);
+
+            int Depth(CategorySnapshotDTO cat)
+            {
+                int depth = 1;
+                var current = cat;
+                int safety = 0;
+                while (!string.IsNullOrEmpty(current.ParentId)
+                    && allByBvin.TryGetValue(current.ParentId, out var parent))
+                {
+                    depth++;
+                    current = parent;
+                    if (++safety > 10) break;
+                }
+                return depth;
+            }
+
+            var withDepth = productCats
+                .Select(c => (Cat: c, Depth: Depth(c)))
+                .OrderByDescending(x => x.Depth)
+                .ToList();
+
+            var second = withDepth.FirstOrDefault(x => x.Depth == 2);
+            if (second.Cat != null) return second.Cat.Name ?? string.Empty;
+
+            var first = withDepth.FirstOrDefault();
+            return first.Cat?.Name ?? string.Empty;
+        }
+
         private static string BuildVariantDisplayName(
             VariantDTO v, Dictionary<string, string> labelLookup)
         {
@@ -87,15 +120,9 @@ namespace RitmusShop_keszletkezelo.ViewModels
 
             return labels.Count > 0
                 ? string.Join(", ", labels!)
-                : "(ismeretlen)";
+                : (!string.IsNullOrEmpty(v.Sku) ? v.Sku : "(ismeretlen)");
         }
 
-        /// <summary>
-        /// Egységes GUID formára hozza az inputot. A Hotcakes API egyes helyeken
-        /// kötőjelekkel ("D" formátum, 36 char), máshol kötőjelek nélkül 
-        /// ("N" formátum, 32 char) adja vissza a GUID-okat. Itt mindkét formát
-        /// 32 karakteres kisbetűs alakra hozzuk.
-        /// </summary>
         private static string NormalizeGuid(string? raw)
         {
             if (string.IsNullOrEmpty(raw)) return string.Empty;
