@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using Hotcakes.CommerceDTO.v1.Catalog;
 using RitmusShop_keszletkezelo.Services;
 using RitmusShop_keszletkezelo.ViewModels;
+using System.Drawing;
 
 namespace RitmusShop_keszletkezelo
 {
@@ -12,13 +13,24 @@ namespace RitmusShop_keszletkezelo
         private HotcakesApiService _service = null!;
         private VariantViewModel _variant = null!;
 
-        /// <summary>Eseményt vált ki, ha a checkbox állapota változik (a parent figyeli).</summary>
         public event EventHandler? SelectionChanged;
 
         public VariantListItem()
         {
             InitializeComponent();
             chkSelect.CheckedChanged += ChkSelect_CheckedChanged;
+
+            this.BackColor = UiTheme.CardBackground;
+            foreach (Control c in this.Controls)
+                c.Font = UiTheme.BodyFont;
+
+            btnApply.FlatStyle = FlatStyle.Flat;
+            btnApply.BackColor = UiTheme.Accent;
+            btnApply.ForeColor = Color.White;
+            btnApply.FlatAppearance.BorderSize = 0;
+            btnApply.Font = UiTheme.ButtonFont;
+
+            txtDelta.BorderStyle = BorderStyle.FixedSingle;
         }
 
         public void Setup(HotcakesApiService service, VariantViewModel variant)
@@ -31,16 +43,9 @@ namespace RitmusShop_keszletkezelo
             txtDelta.Text = "0";
             chkSelect.Checked = variant.IsSelected;
         }
-
-        /// <summary>
-        /// Külsőleg állítja a checkbox állapotát (pl. amikor a termék-checkbox 
-        /// minden variánsát egyszerre jelöli ki). A SuppressEvent flaggel
-        /// elkerüljük, hogy ez visszafelé is triggerelje a parent-et.
-        /// </summary>
         public void SetSelectedSilently(bool selected)
         {
             _variant.IsSelected = selected;
-            // Eltávolítjuk az event handlert, beállítjuk, visszatesszük
             chkSelect.CheckedChanged -= ChkSelect_CheckedChanged;
             chkSelect.Checked = selected;
             chkSelect.CheckedChanged += ChkSelect_CheckedChanged;

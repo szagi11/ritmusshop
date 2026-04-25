@@ -24,47 +24,31 @@
             txtDelta = new System.Windows.Forms.TextBox();
             btnApply = new System.Windows.Forms.Button();
             SuspendLayout();
-            // 
-            // chkSelect
-            // 
-            chkSelect.Location = new System.Drawing.Point(5, 8);
-            chkSelect.Size = new System.Drawing.Size(20, 24);
-            chkSelect.UseVisualStyleBackColor = true;
-            // 
+
+            // chkSelect — bal szélen
+            chkSelect.Location = new System.Drawing.Point(5, 6);
+            chkSelect.Size = new System.Drawing.Size(20, 22);
+            //
             // lblVariantName
-            // 
-            lblVariantName.AutoSize = false;
-            lblVariantName.Location = new System.Drawing.Point(30, 8);
-            lblVariantName.Size = new System.Drawing.Size(200, 20);
-            lblVariantName.Text = "Variáns";
-            // 
+            lblVariantName.Location = new System.Drawing.Point(28, 6);
+            lblVariantName.Size = new System.Drawing.Size(70, 20);
+            //
             // lblCurrentStock
-            // 
-            lblCurrentStock.AutoSize = false;
-            lblCurrentStock.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            lblCurrentStock.Location = new System.Drawing.Point(235, 8);
-            lblCurrentStock.Size = new System.Drawing.Size(60, 20);
-            lblCurrentStock.Text = "0";
-            // 
+            lblCurrentStock.Location = new System.Drawing.Point(100, 6);
+            lblCurrentStock.Size = new System.Drawing.Size(40, 20);
+            //
             // txtDelta
-            // 
-            txtDelta.Location = new System.Drawing.Point(305, 5);
-            txtDelta.Size = new System.Drawing.Size(70, 27);
-            txtDelta.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            txtDelta.Text = "0";
-            // 
+            txtDelta.Location = new System.Drawing.Point(145, 4);
+            txtDelta.Size = new System.Drawing.Size(45, 25);
+            //
             // btnApply
-            // 
-            btnApply.Location = new System.Drawing.Point(385, 4);
-            btnApply.Size = new System.Drawing.Size(90, 28);
-            btnApply.Text = "Alkalmaz";
-            btnApply.UseVisualStyleBackColor = true;
-            btnApply.Click += btnApply_Click;
-            // 
+            btnApply.Location = new System.Drawing.Point(195, 3);
+            btnApply.Size = new System.Drawing.Size(75, 26);
+            //
             // VariantListItem
-            // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            Size = new System.Drawing.Size(280, 32);
+
+
             Controls.Add(chkSelect);
             Controls.Add(btnApply);
             Controls.Add(txtDelta);

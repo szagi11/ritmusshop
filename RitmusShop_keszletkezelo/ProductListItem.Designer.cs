@@ -17,6 +17,7 @@
             chkSelect = new CheckBox();
             lblProductName = new Label();
             lblSku = new Label();
+            lblStockLabel = new Label();
             lblCurrentStock = new Label();
             txtDelta = new TextBox();
             btnApply = new Button();
@@ -24,70 +25,75 @@
             pnlVariants = new Panel();
             SuspendLayout();
             // 
-            // chkSelect
+            // chkSelect — bal felső sarok
             // 
-            chkSelect.Location = new Point(8, 12);
+            chkSelect.Location = new Point(10, 12);
             chkSelect.Size = new Size(20, 24);
             chkSelect.ThreeState = true;
             chkSelect.UseVisualStyleBackColor = true;
             // 
-            // lblProductName
+            // lblProductName — termék neve, kártya teteje
             // 
-            lblProductName.AutoSize = false;
-            lblProductName.Location = new Point(35, 12);
+            lblProductName.Location = new Point(35, 10);
+            lblProductName.Size = new Size(245, 35);
             lblProductName.Name = "lblProductName";
-            lblProductName.Size = new Size(260, 20);
             lblProductName.Text = "Termék neve";
+            // AutoEllipsis True: ha hosszú a név, "..."-tal vágja
+            lblProductName.AutoEllipsis = true;
             // 
             // lblSku
             // 
-            lblSku.AutoSize = false;
-            lblSku.Location = new Point(305, 12);
+            lblSku.Location = new Point(35, 47);
+            lblSku.Size = new Size(245, 20);
             lblSku.Name = "lblSku";
-            lblSku.Size = new Size(130, 20);
             lblSku.Text = "SKU";
             // 
-            // lblCurrentStock
+            // lblStockLabel — "Készlet:" felirat
             // 
-            lblCurrentStock.AutoSize = false;
-            lblCurrentStock.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            lblCurrentStock.Location = new Point(445, 12);
+            lblStockLabel.Location = new Point(10, 75);
+            lblStockLabel.Size = new Size(70, 22);
+            lblStockLabel.Name = "lblStockLabel";
+            lblStockLabel.Text = "Készlet:";
+            lblStockLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // lblCurrentStock — érték
+            // 
+            lblCurrentStock.Location = new Point(80, 75);
+            lblCurrentStock.Size = new Size(50, 22);
             lblCurrentStock.Name = "lblCurrentStock";
-            lblCurrentStock.Size = new Size(60, 20);
             lblCurrentStock.Text = "0";
+            lblCurrentStock.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // txtDelta
+            // txtDelta — kis szám textbox (kártyán belül)
             // 
-            txtDelta.Location = new Point(515, 8);
+            txtDelta.Location = new Point(140, 73);
+            txtDelta.Size = new Size(50, 25);
             txtDelta.Name = "txtDelta";
-            txtDelta.Size = new Size(60, 27);
             txtDelta.TextAlign = HorizontalAlignment.Right;
             txtDelta.Text = "0";
             // 
             // btnApply
             // 
-            btnApply.Location = new Point(580, 7);
+            btnApply.Location = new Point(195, 72);
+            btnApply.Size = new Size(85, 28);
             btnApply.Name = "btnApply";
-            btnApply.Size = new Size(90, 29);
             btnApply.Text = "Alkalmaz";
             btnApply.UseVisualStyleBackColor = true;
             btnApply.Click += btnApply_Click;
             // 
-            // btnExpand
+            // btnExpand — a kártya alja, középen
             // 
-            btnExpand.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnExpand.Location = new Point(680, 7);
+            btnExpand.Location = new Point(80, 105);
+            btnExpand.Size = new Size(130, 28);
             btnExpand.Name = "btnExpand";
-            btnExpand.Size = new Size(110, 29);
             btnExpand.UseVisualStyleBackColor = true;
             btnExpand.Click += btnExpand_Click;
             // 
-            // pnlVariants
+            // pnlVariants — a kártya alá nyíló panel
             // 
-            pnlVariants.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            pnlVariants.Location = new Point(35, 45);
+            pnlVariants.Location = new Point(0, 145);
+            pnlVariants.Size = new Size(290, 155);
             pnlVariants.Name = "pnlVariants";
-            pnlVariants.Size = new Size(755, 155);
             // 
             // ProductListItem
             // 
@@ -98,11 +104,13 @@
             Controls.Add(btnApply);
             Controls.Add(txtDelta);
             Controls.Add(lblCurrentStock);
+            Controls.Add(lblStockLabel);
             Controls.Add(lblSku);
             Controls.Add(lblProductName);
             Controls.Add(chkSelect);
             Name = "ProductListItem";
-            Size = new Size(800, 40);
+            Size = new Size(290, 145);
+            Margin = new Padding(8);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -112,6 +120,7 @@
         private CheckBox chkSelect;
         private Label lblProductName;
         private Label lblSku;
+        private Label lblStockLabel;
         private Label lblCurrentStock;
         private TextBox txtDelta;
         private Button btnApply;

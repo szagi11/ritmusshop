@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using Microsoft.Extensions.Configuration;
 using RitmusShop_keszletkezelo.Services;
 using RitmusShop_keszletkezelo.ViewModels;
+using System.Drawing;
 
 namespace RitmusShop_keszletkezelo
 {
@@ -64,9 +65,19 @@ namespace RitmusShop_keszletkezelo
                     {
                         Text = cat.Name,
                         Tag = cat.Bvin,
-                        Width = flpCategories.Width - 10,
-                        Height = 50
+                        Height = 45,
+                        Font = UiTheme.BodyFont,
+                        FlatStyle = FlatStyle.Flat,
+                        BackColor = UiTheme.CardBackground,
+                        ForeColor = UiTheme.TextPrimary,
+                        TextAlign = ContentAlignment.MiddleLeft,
+                        Padding = new Padding(15, 0, 0, 0),
+                        Margin = new Padding(0, 3, 0, 3),
+                        Cursor = Cursors.Hand
                     };
+                    btnCat.FlatAppearance.BorderColor = UiTheme.CardBorder;
+                    btnCat.FlatAppearance.BorderSize = 1;
+                    btnCat.FlatAppearance.MouseOverBackColor = UiTheme.AccentLight;
                     btnCat.Click += CategoryButton_Click;
                     flpCategories.Controls.Add(btnCat);
                 }
@@ -119,7 +130,7 @@ namespace RitmusShop_keszletkezelo
                 flpProducts.SuspendLayout();
                 foreach (var vm in viewModels)
                 {
-                    var item = new ProductListItem { Width = flpProducts.Width - 25 };
+                    var item = new ProductListItem();
                     item.Setup(_service, vm);
                     item.SelectionChanged += (s, ev) => UpdateSelectionCounter();
                     flpProducts.Controls.Add(item);
@@ -138,12 +149,6 @@ namespace RitmusShop_keszletkezelo
             }
         }
 
-        /// <summary>
-        /// Védett opció-lekérés: ha egy termékre nem érkezik opció (pl. nincs is),
-        /// üres listával térünk vissza, hogy az egész kategória betöltése ne álljon le.
-        /// A többi metódusnál (variants, inventory) a hibát továbbra is engedjük
-        /// felszállni — azok valódi adatok nélkül nem tudunk dolgozni.
-        /// </summary>
         private async Task<List<Hotcakes.CommerceDTO.v1.Catalog.OptionDTO>> SafeGetOptionsAsync(string productBvin)
         {
             try
