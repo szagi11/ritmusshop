@@ -13,17 +13,12 @@ namespace RitmusShop_keszletkezelo
     {
         private const int CardCollapsedHeight = 145;
         private const int VariantRowHeight = 36;
-        private const int VariantBulkRowHeight = 38;
         private const int VariantPanelTopPadding = 5;
 
         private HotcakesApiService _service = null!;
         private InventoryItemViewModel _vm = null!;
         private bool _variantsLoaded;
         private bool _suppressCheckEvent;
-
-        private TextBox? _txtVariantBulkDelta;
-        private Button? _btnVariantBulkApply;
-        private Button? _btnSelectAllVariants;
 
         public event EventHandler? SelectionChanged;
         public event EventHandler? ExpandRequested;
@@ -49,12 +44,6 @@ namespace RitmusShop_keszletkezelo
                 bool isSelected = _vm != null && HasAnySelection();
                 var rect = new Rectangle(0, 0, this.Width - 1, this.Height - 1);
 
-                if (isSelected)
-                {
-                    using var brush = new SolidBrush(UiTheme.AccentLight);
-                    e.Graphics.FillRectangle(brush, rect);
-                }
-
                 using var pen = new Pen(isSelected ? UiTheme.Accent : UiTheme.CardBorder, isSelected ? 2 : 1);
                 e.Graphics.DrawRectangle(pen, rect);
             };
@@ -74,16 +63,6 @@ namespace RitmusShop_keszletkezelo
             lblCurrentStock.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
             lblCurrentStock.ForeColor = UiTheme.TextPrimary;
 
-            txtDelta.Font = UiTheme.BodyFont;
-            txtDelta.BorderStyle = BorderStyle.FixedSingle;
-
-            btnApply.FlatStyle = FlatStyle.Flat;
-            btnApply.BackColor = UiTheme.CardBackground;
-            btnApply.ForeColor = UiTheme.Accent;
-            btnApply.FlatAppearance.BorderColor = UiTheme.Accent;
-            btnApply.FlatAppearance.BorderSize = 1;
-            btnApply.Font = UiTheme.ButtonFont;
-
             btnExpand.FlatStyle = FlatStyle.Flat;
             btnExpand.BackColor = UiTheme.CardBackground;
             btnExpand.ForeColor = UiTheme.TextPrimary;
@@ -100,42 +79,46 @@ namespace RitmusShop_keszletkezelo
             lblSku.Text = vm.Sku;
             lblCategory.Text = string.IsNullOrEmpty(vm.CategoryDisplay) ? "" : $"Kategória: {vm.CategoryDisplay}";
             lblCurrentStock.Text = vm.TotalQuantityOnHand.ToString();
-            txtDelta.Text = "0";
 
-            if (vm.HasVariants)
-            {
-                txtDelta.Visible = false;
-                btnApply.Visible = false;
-                btnExpand.Visible = true;
-                btnExpand.Text = "Méretek ▾";
-            }
-            else
-            {
-                txtDelta.Visible = true;
-                btnApply.Visible = true;
-                btnExpand.Visible = false;
-            }
+            btnExpand.Visible = vm.HasVariants;
+            btnExpand.Text = "Méretek ▾";
 
             UpdateProductCheckboxState();
+            UpdateBackgroundForSelection();
+        }
+
+        /// <summary>
+        /// A kártya belső kontrolljainak hátterét beigazítja a kijelölési állapothoz,
+        /// hogy az egész kártya egységesen színezett legyen, ne csak a háttér-rétege.
+        /// </summary>
+        private void UpdateBackgroundForSelection()
+        {
+            bool isSelected = _vm != null && HasAnySelection();
+            var bg = isSelected ? UiTheme.AccentLight : UiTheme.CardBackground;
+
+            this.BackColor = bg;
+            chkSelect.BackColor = bg;
+            lblProductName.BackColor = bg;
+            lblSku.BackColor = bg;
+            lblCategory.BackColor = bg;
+            lblStockLabel.BackColor = bg;
+            lblCurrentStock.BackColor = bg;
+            btnExpand.BackColor = bg;
         }
 
         public IEnumerable<Hotcakes.CommerceDTO.v1.Catalog.ProductInventoryDTO> GetSelectedInventories()
+             => _vm.GetSelectedInventories();
+
+        public bool HasAnySelection() => _vm.HasAnySelection();
+
+        public int CountSelected() => _vm.CountSelected();
+
+        public bool MatchesFilter(string query)
         {
-            if (!_vm.HasVariants)
-            {
-                if (_vm.IsSelected && _vm.MainInventory != null)
-                    yield return _vm.MainInventory;
-            }
-            else
-            {
-                foreach (var variant in _vm.Variants.Where(v => v.IsSelected && v.Inventory != null))
-                    yield return variant.Inventory!;
-            }
+            if (_vm == null) return true;
+            return _vm.MatchesFilter(query);
         }
 
-        public bool MatchesFilter(string query) => _vm.MatchesFilter(query);
-
- 
         private void ChkSelect_CheckedChanged(object? sender, EventArgs e)
         {
             if (_suppressCheckEvent) return;
@@ -157,6 +140,7 @@ namespace RitmusShop_keszletkezelo
                 _vm.IsSelected = selected;
             }
 
+            UpdateBackgroundForSelection();
             this.Invalidate();
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -186,6 +170,7 @@ namespace RitmusShop_keszletkezelo
             {
                 _suppressCheckEvent = false;
             }
+            UpdateBackgroundForSelection();
             this.Invalidate();
         }
 
@@ -222,7 +207,7 @@ namespace RitmusShop_keszletkezelo
         {
             if (!_variantsLoaded) PopulateVariantPanel();
             pnlVariants.Visible = true;
-            int variantsHeight = _vm.Variants.Count * VariantRowHeight + VariantBulkRowHeight + 8;
+            int variantsHeight = _vm.Variants.Count * VariantRowHeight + 8;
             pnlVariants.Height = variantsHeight;
             this.Height = CardCollapsedHeight + VariantPanelTopPadding + variantsHeight;
             btnExpand.Text = "Méretek ▴";
@@ -247,110 +232,14 @@ namespace RitmusShop_keszletkezelo
                 y += VariantRowHeight;
             }
 
-            _btnSelectAllVariants = new Button
-            {
-                Location = new Point(5, y + 4),
-                Size = new Size(110, 28),
-                Text = "Mind ki",
-                FlatStyle = FlatStyle.Flat,
-                BackColor = UiTheme.CardBackground,
-                Font = UiTheme.ButtonFont,
-                UseVisualStyleBackColor = true
-            };
-            _btnSelectAllVariants.FlatAppearance.BorderColor = UiTheme.CardBorder;
-            _btnSelectAllVariants.Click += BtnSelectAllVariants_Click;
-
-            _txtVariantBulkDelta = new TextBox
-            {
-                Location = new Point(125, 5 + y),
-                Size = new Size(60, 25),
-                TextAlign = HorizontalAlignment.Right,
-                Text = "0",
-                Font = UiTheme.BodyFont,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-            _btnVariantBulkApply = new Button
-            {
-                Location = new Point(195, 4 + y),
-                Size = new Size(120, 28),
-                Text = "Kijelöltekre",
-                FlatStyle = FlatStyle.Flat,
-                BackColor = UiTheme.CardBackground,
-                ForeColor = UiTheme.Accent,
-                Font = UiTheme.ButtonFont
-            };
-            _btnVariantBulkApply.FlatAppearance.BorderColor = UiTheme.Accent;
-            _btnVariantBulkApply.FlatAppearance.BorderSize = 1;
-            _btnVariantBulkApply.Click += BtnVariantBulkApply_Click;
-
-            pnlVariants.Controls.Add(_btnSelectAllVariants);
-            pnlVariants.Controls.Add(_txtVariantBulkDelta);
-            pnlVariants.Controls.Add(_btnVariantBulkApply);
-
-            pnlVariants.Height = y + VariantBulkRowHeight + 4;
+            pnlVariants.Height = y + 4;
             pnlVariants.ResumeLayout();
             _variantsLoaded = true;
         }
 
-        private void BtnSelectAllVariants_Click(object? sender, EventArgs e)
-        {
-            bool allSelected = _vm.Variants.All(v => v.IsSelected);
-            bool newState = !allSelected;
-
-            foreach (var variant in _vm.Variants)
-                variant.IsSelected = newState;
-            foreach (var row in pnlVariants.Controls.OfType<VariantListItem>())
-                row.SetSelectedSilently(newState);
-
-            UpdateProductCheckboxState();
-            SelectionChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        private async void BtnVariantBulkApply_Click(object? sender, EventArgs e)
-        {
-            if (_txtVariantBulkDelta == null || _btnVariantBulkApply == null) return;
-
-            if (!int.TryParse(_txtVariantBulkDelta.Text, out int delta) || delta == 0)
-            {
-                MessageBox.Show("Adj meg egy nem nulla egész számot.",
-                    "Érvénytelen érték", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var selected = _vm.Variants.Where(v => v.IsSelected && v.Inventory != null).ToList();
-            if (selected.Count == 0)
-            {
-                MessageBox.Show("Nincs kijelölt méret.",
-                    "Tömeges módosítás", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            try
-            {
-                _btnVariantBulkApply.Enabled = false;
-                Cursor = Cursors.WaitCursor;
-
-                int success = 0, failed = 0;
-                foreach (var variant in selected)
-                {
-                    if (await TryUpdateInventory(variant.Inventory!, delta)) success++;
-                    else failed++;
-                }
-
-                lblCurrentStock.Text = _vm.TotalQuantityOnHand.ToString();
-                RefreshVariantRowLabels();
-                _txtVariantBulkDelta.Text = "0";
-
-                if (failed > 0)
-                    MessageBox.Show($"Sikeres: {success}, sikertelen: {failed}.",
-                        "Tömeges módosítás", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            finally
-            {
-                _btnVariantBulkApply.Enabled = true;
-                Cursor = Cursors.Default;
-            }
-        }
+        // -----------------------------------------------------------------
+        // KÜLSŐ BULK — a MainForm hívja az alsó sávból
+        // -----------------------------------------------------------------
 
         public async Task<BulkResult> ApplySelectedAsync(int delta)
         {
@@ -367,9 +256,6 @@ namespace RitmusShop_keszletkezelo
             RefreshVariantRowLabels();
             return result;
         }
-
-        public bool HasAnySelection() => GetSelectedInventories().Any();
-        public int CountSelected() => GetSelectedInventories().Count();
 
         public void ClearAllSelections()
         {
@@ -427,40 +313,6 @@ namespace RitmusShop_keszletkezelo
         {
             foreach (var row in pnlVariants.Controls.OfType<VariantListItem>())
                 row.RefreshDisplay();
-        }
-
-        private async void btnApply_Click(object? sender, EventArgs e)
-        {
-            if (_vm?.MainInventory == null)
-            {
-                MessageBox.Show("Ehhez a termékhez nincs készletsor.",
-                    "Hiba", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (!int.TryParse(txtDelta.Text, out int delta))
-            {
-                MessageBox.Show("Csak egész szám adható meg.",
-                    "Érvénytelen érték", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            try
-            {
-                btnApply.Enabled = false;
-                Cursor = Cursors.WaitCursor;
-
-                if (await TryUpdateInventory(_vm.MainInventory, delta))
-                {
-                    lblCurrentStock.Text = _vm.TotalQuantityOnHand.ToString();
-                    txtDelta.Text = "0";
-                }
-            }
-            finally
-            {
-                btnApply.Enabled = true;
-                Cursor = Cursors.Default;
-            }
         }
 
         public class BulkResult

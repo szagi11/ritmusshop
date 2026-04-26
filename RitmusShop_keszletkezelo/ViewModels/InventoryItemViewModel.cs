@@ -66,6 +66,23 @@ namespace RitmusShop_keszletkezelo.ViewModels
             return vm;
         }
 
+        public IEnumerable<ProductInventoryDTO> GetSelectedInventories()
+        {
+            if (!HasVariants)
+            {
+                if (IsSelected && MainInventory != null)
+                    yield return MainInventory;
+            }
+            else
+            {
+                foreach (var variant in Variants.Where(v => v.IsSelected && v.Inventory != null))
+                    yield return variant.Inventory!;
+            }
+        }
+
+        public bool HasAnySelection() => GetSelectedInventories().Any();
+        public int CountSelected() => GetSelectedInventories().Count();
+
         // Kereső
         public bool MatchesFilter(string query)
         {

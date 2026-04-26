@@ -20,8 +20,6 @@
             lblCategory = new Label();
             lblStockLabel = new Label();
             lblCurrentStock = new Label();
-            txtDelta = new TextBox();
-            btnApply = new Button();
             btnExpand = new Button();
             pnlVariants = new Panel();
             SuspendLayout();
@@ -67,24 +65,7 @@
             lblCurrentStock.Text = "0";
             lblCurrentStock.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // txtDelta — JOBBRA anchorolt: kártya jobb oldalán
-            // 
-            txtDelta.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            txtDelta.Location = new Point(800, 88);
-            txtDelta.Size = new Size(60, 27);
-            txtDelta.TextAlign = HorizontalAlignment.Right;
-            txtDelta.Text = "0";
-            // 
-            // btnApply — JOBBRA anchorolt: a kártya jobb szélén (variáns nélküli termékeknél)
-            // 
-            btnApply.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnApply.Location = new Point(870, 87);
-            btnApply.Size = new Size(115, 28);
-            btnApply.Text = "Alkalmazás";
-            btnApply.UseVisualStyleBackColor = true;
-            btnApply.Click += btnApply_Click;
-            // 
-            // btnExpand — JOBBRA anchorolt: ugyanott, ahol a btnApply (átfedve, csak az egyik látható)
+            // btnExpand — JOBBRA anchorolt: a kártya jobb szélén
             // 
             btnExpand.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnExpand.Location = new Point(870, 87);
@@ -105,8 +86,6 @@
             AutoScaleMode = AutoScaleMode.Font;
             Controls.Add(pnlVariants);
             Controls.Add(btnExpand);
-            Controls.Add(btnApply);
-            Controls.Add(txtDelta);
             Controls.Add(lblCurrentStock);
             Controls.Add(lblStockLabel);
             Controls.Add(lblCategory);
@@ -128,8 +107,6 @@
         private Label lblCategory;
         private Label lblStockLabel;
         private Label lblCurrentStock;
-        private TextBox txtDelta;
-        private Button btnApply;
         private Button btnExpand;
         private Panel pnlVariants;
     }
