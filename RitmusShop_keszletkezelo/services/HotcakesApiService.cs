@@ -1,39 +1,35 @@
 ﻿// File: Services/HotcakesApiService.cs
+using Hotcakes.CommerceDTO.v1.Catalog;
+using Newtonsoft.Json;
+using RitmusShop_keszletkezelo.services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Hotcakes.CommerceDTO.v1.Catalog;
-using Newtonsoft.Json;
 
 namespace RitmusShop_keszletkezelo.Services
 {
-    public class HotcakesApiService : IDisposable
+    public class HotcakesApiService : IHotcakesApiService
     {
         private readonly HttpClient _http;
         private readonly string _apiKey;
-        private readonly string _basePath;  // pl. "DesktopModules/Hotcakes/API/rest/v1/"
+        private readonly string _basePath;
 
         /// <param name="baseUrl">A bolt host gyökér URL-je
         /// (pl. "http://20.234.52.47/").</param>
         /// <param name="apiKey">Hotcakes admin API kulcs.</param>
-        public HotcakesApiService(string baseUrl, string apiKey)
+        public HotcakesApiService(
+            HttpClient httpClient,
+            string apiKey,
+            string basePath = "DesktopModules/Hotcakes/API/rest/v1/")
         {
-            if (string.IsNullOrWhiteSpace(baseUrl))
-                throw new ArgumentNullException(nameof(baseUrl));
+            _http = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new ArgumentNullException(nameof(apiKey));
 
-            if (!baseUrl.EndsWith("/")) baseUrl += "/";
-
-            _http = new HttpClient
-            {
-                BaseAddress = new Uri(baseUrl),
-                Timeout = TimeSpan.FromSeconds(30)
-            };
             _apiKey = apiKey;
-            _basePath = "DesktopModules/Hotcakes/API/rest/v1/";
+            _basePath = basePath;
         }
 
         // =================================================================
@@ -198,7 +194,7 @@ namespace RitmusShop_keszletkezelo.Services
 
         public void Dispose()
         {
-            _http.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         private class ApiResponseEnvelope<T>

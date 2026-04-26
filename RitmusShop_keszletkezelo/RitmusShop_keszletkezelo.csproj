@@ -25,4 +25,8 @@
     </None>
   </ItemGroup>
 
+	<ItemGroup>
+		<InternalsVisibleTo Include="RitmusShop_keszletkezelo.Tests" />
+	</ItemGroup>
+
 </Project>

@@ -66,7 +66,20 @@ namespace RitmusShop_keszletkezelo.ViewModels
             return vm;
         }
 
-        private static string ResolveCategoryDisplay(
+        // Kereső
+        public bool MatchesFilter(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query)) return true;
+            return ContainsCi(ProductName, query)
+                || ContainsCi(Sku, query)
+                || Variants.Any(v => ContainsCi(v.Sku, query) || ContainsCi(v.DisplayName, query));
+        }
+
+        private static bool ContainsCi(string? haystack, string needle) =>
+            haystack != null && haystack.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
+
+
+        internal static string ResolveCategoryDisplay(
             List<CategorySnapshotDTO> productCats,
             List<CategorySnapshotDTO> allCats)
         {
@@ -103,7 +116,7 @@ namespace RitmusShop_keszletkezelo.ViewModels
             return first.Cat?.Name ?? string.Empty;
         }
 
-        private static string BuildVariantDisplayName(
+        internal static string BuildVariantDisplayName(
             VariantDTO v, Dictionary<string, string> labelLookup)
         {
             if (v.Selections == null || v.Selections.Count == 0)
@@ -123,12 +136,13 @@ namespace RitmusShop_keszletkezelo.ViewModels
                 : (!string.IsNullOrEmpty(v.Sku) ? v.Sku : "(ismeretlen)");
         }
 
-        private static string NormalizeGuid(string? raw)
+        internal static string NormalizeGuid(string? raw)
         {
             if (string.IsNullOrEmpty(raw)) return string.Empty;
             if (Guid.TryParse(raw, out var g)) return g.ToString("N");
             return raw.Replace("-", string.Empty).ToLowerInvariant();
         }
+
     }
 
     public class VariantViewModel

@@ -133,20 +133,9 @@ namespace RitmusShop_keszletkezelo
             }
         }
 
-        public bool MatchesFilter(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query)) return true;
-            if (_vm == null) return true;
+        public bool MatchesFilter(string query) => _vm.MatchesFilter(query);
 
-            return ContainsCi(_vm.ProductName, query)
-                || ContainsCi(_vm.Sku, query)
-                || _vm.Variants.Any(v =>
-                    ContainsCi(v.Sku, query) || ContainsCi(v.DisplayName, query));
-        }
-
-        private static bool ContainsCi(string? haystack, string needle) =>
-            haystack != null && haystack.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
-
+ 
         private void ChkSelect_CheckedChanged(object? sender, EventArgs e)
         {
             if (_suppressCheckEvent) return;

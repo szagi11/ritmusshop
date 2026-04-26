@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Hotcakes.CommerceDTO.v1.Catalog;
@@ -14,6 +15,7 @@ namespace RitmusShop_keszletkezelo
     public partial class MainForm : Form
     {
         private readonly HotcakesApiService _service;
+        private readonly HttpClient _httpClient;
         private Button? _activeCategoryButton;
 
         // A kategóriák cache-elve, hogy ne kelljen újra lekérni
@@ -39,7 +41,16 @@ namespace RitmusShop_keszletkezelo
                 Environment.Exit(1);
             }
 
-            _service = new HotcakesApiService(baseUrl, apiKey);
+            // HttpClient-et a Form hozza létre, és a Form Closed-jénél szabadítja fel.
+            // Ezzel a Service tesztelhetõ marad (kívülrõl kapja a HttpClient-et).
+            if (!baseUrl.EndsWith("/")) baseUrl += "/";
+
+            _httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(baseUrl),
+                Timeout = TimeSpan.FromSeconds(30)
+            };
+            _service = new HotcakesApiService(_httpClient, apiKey);
 
             txtSearch.TextChanged += TxtSearch_TextChanged;
             btnBulkApply.Click += BtnBulkApply_Click;
@@ -51,6 +62,7 @@ namespace RitmusShop_keszletkezelo
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             _service?.Dispose();
+            _httpClient?.Dispose();
             base.OnFormClosed(e);
         }
 
