@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using Hotcakes.CommerceDTO.v1.Catalog;
-using RitmusShop_keszletkezelo.Services;
 using RitmusShop_keszletkezelo.ViewModels;
 
 namespace RitmusShop_keszletkezelo
 {
     public partial class VariantListItem : UserControl
     {
-        private HotcakesApiService _service = null!;
         private VariantViewModel _variant = null!;
 
         public event EventHandler? SelectionChanged;
@@ -24,9 +21,8 @@ namespace RitmusShop_keszletkezelo
                 c.Font = UiTheme.BodyFont;
         }
 
-        public void Setup(HotcakesApiService service, VariantViewModel variant)
+        public void Setup(VariantViewModel variant)
         {
-            _service = service;
             _variant = variant;
 
             lblVariantName.Text = variant.DisplayName;
@@ -52,10 +48,6 @@ namespace RitmusShop_keszletkezelo
                 lblCurrentStock.Text = _variant.QuantityOnHand.ToString();
         }
 
-        /// <summary>
-        /// A variánssor összes belső kontrolljának hátterét beállítja
-        /// a kijelölési állapot szerint.
-        /// </summary>
         private void UpdateBackgroundForSelection()
         {
             bool isSelected = _variant != null && _variant.IsSelected;
@@ -64,6 +56,7 @@ namespace RitmusShop_keszletkezelo
             this.BackColor = bg;
             chkSelect.BackColor = bg;
             lblVariantName.BackColor = bg;
+            lblStockLabel.BackColor = bg;
             lblCurrentStock.BackColor = bg;
         }
 

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Hotcakes.CommerceDTO.v1.Catalog;
 using RitmusShop_keszletkezelo.Services;
 using RitmusShop_keszletkezelo.ViewModels;
 
@@ -15,7 +16,7 @@ namespace RitmusShop_keszletkezelo
         private const int VariantRowHeight = 36;
         private const int VariantPanelTopPadding = 5;
 
-        private HotcakesApiService _service = null!;
+        private IHotcakesApiService _service = null!;
         private InventoryItemViewModel _vm = null!;
         private bool _variantsLoaded;
         private bool _suppressCheckEvent;
@@ -29,15 +30,34 @@ namespace RitmusShop_keszletkezelo
         {
             InitializeComponent();
             ApplyCardStyling();
+            pnlVariants.Resize += PnlVariants_Resize;
             this.Height = CardCollapsedHeight;
             btnExpand.Text = "Méretek ▾";
             chkSelect.CheckedChanged += ChkSelect_CheckedChanged;
         }
 
+        private void PnlVariants_Resize(object? sender, EventArgs e)
+        {
+            if (!_variantsLoaded) return;
+
+            foreach (var row in pnlVariants.Controls.OfType<VariantListItem>())
+            {
+                row.Width = CalcVariantRowWidth();
+                row.Left = CalcVariantRowX(row.Width);
+            }
+        }
+
+        private int CalcVariantRowWidth() =>
+            Math.Max(280, pnlVariants.Width);
+
+        private int CalcVariantRowX(int rowWidth) =>
+            Math.Max(0, (pnlVariants.Width - rowWidth) / 2);
+
         private void ApplyCardStyling()
         {
             this.BackColor = UiTheme.CardBackground;
             this.Margin = new Padding(0, 0, 0, 8);
+            pnlVariants.BackColor = UiTheme.CardBackground;
 
             this.Paint += (s, e) =>
             {
@@ -70,7 +90,7 @@ namespace RitmusShop_keszletkezelo
             btnExpand.Font = UiTheme.ButtonFont;
         }
 
-        public void Setup(HotcakesApiService service, InventoryItemViewModel vm)
+        public void Setup(IHotcakesApiService service, InventoryItemViewModel vm)
         {
             _service = service;
             _vm = vm;
@@ -87,27 +107,22 @@ namespace RitmusShop_keszletkezelo
             UpdateBackgroundForSelection();
         }
 
-        /// <summary>
-        /// A kártya belső kontrolljainak hátterét beigazítja a kijelölési állapothoz,
-        /// hogy az egész kártya egységesen színezett legyen, ne csak a háttér-rétege.
-        /// </summary>
         private void UpdateBackgroundForSelection()
         {
-            bool isSelected = _vm != null && HasAnySelection();
-            var bg = isSelected ? UiTheme.AccentLight : UiTheme.CardBackground;
+            this.BackColor = UiTheme.CardBackground;
+            chkSelect.BackColor = UiTheme.CardBackground;
+            lblProductName.BackColor = UiTheme.CardBackground;
+            lblSku.BackColor = UiTheme.CardBackground;
+            lblCategory.BackColor = UiTheme.CardBackground;
+            lblStockLabel.BackColor = UiTheme.CardBackground;
+            lblCurrentStock.BackColor = UiTheme.CardBackground;
+            btnExpand.BackColor = UiTheme.CardBackground;
 
-            this.BackColor = bg;
-            chkSelect.BackColor = bg;
-            lblProductName.BackColor = bg;
-            lblSku.BackColor = bg;
-            lblCategory.BackColor = bg;
-            lblStockLabel.BackColor = bg;
-            lblCurrentStock.BackColor = bg;
-            btnExpand.BackColor = bg;
+            this.Invalidate();
         }
 
-        public IEnumerable<Hotcakes.CommerceDTO.v1.Catalog.ProductInventoryDTO> GetSelectedInventories()
-             => _vm.GetSelectedInventories();
+        public IEnumerable<ProductInventoryDTO> GetSelectedInventories()
+            => _vm.GetSelectedInventories();
 
         public bool HasAnySelection() => _vm.HasAnySelection();
 
@@ -223,7 +238,7 @@ namespace RitmusShop_keszletkezelo
             foreach (var variant in _vm.Variants)
             {
                 var row = new VariantListItem();
-                row.Setup(_service, variant);
+                row.Setup(variant);
                 row.Location = new Point(5, y);
                 row.Width = pnlVariants.Width - 10;
                 row.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -238,7 +253,7 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // KÜLSŐ BULK — a MainForm hívja az alsó sávból
+        // BULK 
         // -----------------------------------------------------------------
 
         public async Task<BulkResult> ApplySelectedAsync(int delta)
@@ -288,8 +303,7 @@ namespace RitmusShop_keszletkezelo
             UpdateProductCheckboxState();
         }
 
-        private async Task<bool> TryUpdateInventory(
-            Hotcakes.CommerceDTO.v1.Catalog.ProductInventoryDTO inv, int delta)
+        private async Task<bool> TryUpdateInventory(ProductInventoryDTO inv, int delta)
         {
             int oldQty = inv.QuantityOnHand;
             int newQty = oldQty + delta;

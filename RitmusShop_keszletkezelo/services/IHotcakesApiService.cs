@@ -1,11 +1,9 @@
 ﻿using Hotcakes.CommerceDTO.v1.Catalog;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace RitmusShop_keszletkezelo.services
+namespace RitmusShop_keszletkezelo.Services
 {
     public interface IHotcakesApiService : IDisposable
     {

@@ -18,7 +18,7 @@ namespace RitmusShop_keszletkezelo
         private readonly HttpClient _httpClient;
         private Button? _activeCategoryButton;
 
-        // A kategóriák cache-elve, hogy ne kelljen újra lekérni
+        // A kategï¿½riï¿½k cache-elve, hogy ne kelljen ï¿½jra lekï¿½rni
         private List<CategorySnapshotDTO> _allCategories = new();
         private CategorySnapshotDTO? _currentParentCategory;
 
@@ -36,13 +36,12 @@ namespace RitmusShop_keszletkezelo
 
             if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
             {
-                MessageBox.Show("Hiányzó konfiguráció! Ellenõrizd az appsettings.json-t.",
-                    "Konfigurációs hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("HiÃ¡nyzÃ³ konfigurÃ¡ciÃ³! EllenÅ‘rizd az appsettings.json-t.",
+                    "KonfigurÃ¡ciÃ³s hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(1);
             }
 
-            // HttpClient-et a Form hozza létre, és a Form Closed-jénél szabadítja fel.
-            // Ezzel a Service tesztelhetõ marad (kívülrõl kapja a HttpClient-et).
+
             if (!baseUrl.EndsWith("/")) baseUrl += "/";
 
             _httpClient = new HttpClient
@@ -52,11 +51,11 @@ namespace RitmusShop_keszletkezelo
             };
             _service = new HotcakesApiService(_httpClient, apiKey);
 
+            flpProducts.Resize += (s, e) => ResizeAllCards();
             txtSearch.TextChanged += TxtSearch_TextChanged;
             btnBulkApply.Click += BtnBulkApply_Click;
             btnSelectAll.Click += BtnSelectAll_Click;
             cmbSubcategory.SelectedIndexChanged += CmbSubcategory_SelectedIndexChanged;
-            flpProducts.Resize += (s, e) => ResizeAllCards();
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -67,7 +66,7 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // KATEGÓRIÁK BETÖLTÉSE (induláskor egyszer)
+        // KATEGï¿½RIï¿½K BETï¿½LTï¿½SE (indulï¿½skor egyszer)
         // -----------------------------------------------------------------
 
         private async void MainForm_Load(object? sender, EventArgs e)
@@ -105,7 +104,7 @@ namespace RitmusShop_keszletkezelo
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Kategóriák betöltése sikertelen:\n{ex.Message}",
+                MessageBox.Show($"KategÃ³riÃ¡k betÃ¶ltÃ©se sikertelen:\n{ex.Message}",
                     "Hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -114,7 +113,7 @@ namespace RitmusShop_keszletkezelo
         {
             if (sender is not Button btn || btn.Tag is not CategorySnapshotDTO category) return;
 
-            // Aktív kategória vizuális kiemelése
+            // Aktï¿½v kategï¿½ria vizuï¿½lis kiemelï¿½se
             if (_activeCategoryButton != null)
             {
                 _activeCategoryButton.BackColor = UiTheme.CardBackground;
@@ -135,7 +134,7 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // ALKATEGÓRIA COMBOBOX
+        // ALKATEGï¿½RIA COMBOBOX
         // -----------------------------------------------------------------
 
         private void PopulateSubcategoryDropdown(CategorySnapshotDTO parent)
@@ -143,14 +142,14 @@ namespace RitmusShop_keszletkezelo
             cmbSubcategory.SelectedIndexChanged -= CmbSubcategory_SelectedIndexChanged;
             cmbSubcategory.Items.Clear();
 
-            // Elsõ elem: "Összes alkategória"
+            // Elsï¿½ elem: "ï¿½sszes alkategï¿½ria"
             cmbSubcategory.Items.Add(new SubcategoryItem
             {
-                DisplayText = "Összes alkategória",
+                DisplayText = "Ã–sszes alkategÃ³ria",
                 CategoryBvin = parent.Bvin ?? string.Empty
             });
 
-            // A kiválasztott parent alá tartozó alkategóriák
+            // A kivï¿½lasztott parent alï¿½ tartozï¿½ alkategï¿½riï¿½k
             var subs = _allCategories
                 .Where(c => c.ParentId == parent.Bvin)
                 .OrderBy(c => c.SortOrder)
@@ -172,11 +171,19 @@ namespace RitmusShop_keszletkezelo
         private async void CmbSubcategory_SelectedIndexChanged(object? sender, EventArgs e)
         {
             if (cmbSubcategory.SelectedItem is not SubcategoryItem selected) return;
-            await LoadProductsForCategoryAsync(selected.CategoryBvin);
+            try
+            {
+                await LoadProductsForCategoryAsync(selected.CategoryBvin);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Hiba az alkategÃ³ria betÃ¶ltÃ©sekor:\n{ex.Message}",
+                    "Hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         // -----------------------------------------------------------------
-        // TERMÉKEK BETÖLTÉSE
+        // TERMï¿½KEK BETï¿½LTï¿½SE
         // -----------------------------------------------------------------
 
         private async Task LoadProductsForCategoryAsync(string categoryBvin)
@@ -193,7 +200,7 @@ namespace RitmusShop_keszletkezelo
                 {
                     var lbl = new Label
                     {
-                        Text = "Ebben a kategóriában nincs termék.",
+                        Text = "Ebben a kategÃ³riÃ¡ban nincs termï¿½k.",
                         AutoSize = true,
                         Font = UiTheme.BodyFont,
                         ForeColor = UiTheme.TextSecondary
@@ -203,9 +210,6 @@ namespace RitmusShop_keszletkezelo
                     return;
                 }
 
-                // Termékenként párhuzamosan: variánsok, készlet, opciók, kategóriák.
-                // Az opció és kategória lekérdezés "védett": ha nincs adat, üres
-                // listával folytatjuk, hogy az egész kategória betöltése ne álljon le.
                 var fetchTasks = page.Products.Select(async product =>
                 {
                     var variantsTask = _service.GetVariantsForProductAsync(product.Bvin);
@@ -240,7 +244,7 @@ namespace RitmusShop_keszletkezelo
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Hiba a termékek lekérésekor:\n{ex.Message}",
+                MessageBox.Show($"Hiba a termÃ©kek lekÃ©rdezÃ©sekor:\n{ex.Message}",
                     "Hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -262,7 +266,7 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // KIBONTÁS — csak egy kártya egyszerre nyitva
+        // KIBONTï¿½S ï¿½ csak egy kï¿½rtya egyszerre nyitva
         // -----------------------------------------------------------------
 
         private void ProductItem_ExpandRequested(object? sender, EventArgs e)
@@ -275,22 +279,36 @@ namespace RitmusShop_keszletkezelo
                     other.Collapse();
             }
             opener.ToggleExpanded();
+
+            flpProducts.PerformLayout();
         }
 
         // -----------------------------------------------------------------
-        // KÁRTYA SZÉLESSÉG ÚJRASZÁMÍTÁS
+        // Kï¿½RTYA SZï¿½LESSï¿½G ï¿½JRASZï¿½Mï¿½Tï¿½S
         // -----------------------------------------------------------------
 
         private void ResizeAllCards()
         {
             int newWidth = flpProducts.ClientSize.Width - 25;
             if (newWidth < 200) return;
-            foreach (var item in flpProducts.Controls.OfType<ProductListItem>())
-                item.Width = newWidth;
+
+            flpProducts.SuspendLayout();
+            try
+            {
+                foreach (var item in flpProducts.Controls.OfType<ProductListItem>())
+                {
+                    if (item.Width != newWidth)
+                        item.Width = newWidth;
+                }
+            }
+            finally
+            {
+                flpProducts.ResumeLayout();
+            }
         }
 
         // -----------------------------------------------------------------
-        // KERESÕ
+        // KERESï¿½
         // -----------------------------------------------------------------
 
         private void TxtSearch_TextChanged(object? sender, EventArgs e)
@@ -310,18 +328,19 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // KIJELÖLÉSI SZÁMLÁLÓ
+        // KIJELï¿½Lï¿½SI SZï¿½MLï¿½Lï¿½
         // -----------------------------------------------------------------
 
         private void UpdateSelectionCounter()
         {
             int total = flpProducts.Controls.OfType<ProductListItem>()
                 .Sum(p => p.CountSelected());
-            lblBulkInfo.Text = $"Kijelölt: {total} sor";
+            lblBulkInfo.Text = $"KijelÃ¶" +
+                $"lt: {total} sor";
         }
 
         // -----------------------------------------------------------------
-        // MIND KIJELÖLÉSE / TÖRLÉSE
+        // MIND KIJELï¿½Lï¿½SE / Tï¿½RLï¿½SE
         // -----------------------------------------------------------------
 
         private void BtnSelectAll_Click(object? sender, EventArgs e)
@@ -341,15 +360,15 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // TÖMEGES MÓDOSÍTÁS
+        // Tï¿½MEGES Mï¿½DOSï¿½Tï¿½S
         // -----------------------------------------------------------------
 
         private async void BtnBulkApply_Click(object? sender, EventArgs e)
         {
             if (!int.TryParse(txtBulkDelta.Text, out int delta) || delta == 0)
             {
-                MessageBox.Show("Adj meg egy nem nulla egész számot.",
-                    "Érvénytelen érték", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Adj meg egy nem nulla egÃ©sz szÃ¡mot.",
+                    "Ã‰rvÃ©nytelen Ã©rtÃ©k", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -359,14 +378,14 @@ namespace RitmusShop_keszletkezelo
             int totalSelected = items.Sum(i => i.CountSelected());
             if (totalSelected == 0)
             {
-                MessageBox.Show("Nincs kijelölt sor.", "Tömeges módosítás",
+                MessageBox.Show("Nincs kijelÃ¶lt sor.", "TÃ¶meges mÃ³dosÃ­tÃ¡s",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             var confirm = MessageBox.Show(
-                $"Biztosan módosítod {totalSelected} kijelölt sor készletét {delta:+#;-#;0}-val/vel?",
-                "Megerõsítés", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                $"Biztosan mÃ³dosÃ­tod {totalSelected} kijelÃ¶lt sor kÃ©szletÃ©t {delta:+#;-#;0}-val/vel?",
+                "MegerÅ‘sÃ­tÃ©s", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (confirm != DialogResult.Yes) return;
 
             try
@@ -380,8 +399,8 @@ namespace RitmusShop_keszletkezelo
                 int success = results.Sum(r => r.SuccessCount);
                 int failed = results.Sum(r => r.FailedCount);
 
-                MessageBox.Show($"Kész. Sikeres: {success}, sikertelen: {failed}.",
-                    "Tömeges módosítás", MessageBoxButtons.OK,
+                MessageBox.Show($"KÃ©sz. Sikeres: {success}, sikertelen: {failed}.",
+                    "TÃ¶meges mÃ³dosÃ­tÃ¡s", MessageBoxButtons.OK,
                     failed == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
 
                 txtBulkDelta.Text = "0";
@@ -394,7 +413,7 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // SEGÉD TÍPUS — alkategória ComboBox elem
+        // SEGï¿½D Tï¿½PUS ï¿½ alkategï¿½ria ComboBox elem
         // -----------------------------------------------------------------
 
         private class SubcategoryItem

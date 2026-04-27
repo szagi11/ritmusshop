@@ -24,61 +24,76 @@
             pnlVariants = new Panel();
             SuspendLayout();
             // 
-            // chkSelect — bal felső sarok
+            // chkSelect
             // 
             chkSelect.Location = new Point(15, 18);
+            chkSelect.Name = "chkSelect";
             chkSelect.Size = new Size(20, 24);
+            chkSelect.TabIndex = 7;
             chkSelect.ThreeState = true;
             chkSelect.UseVisualStyleBackColor = true;
             // 
-            // lblProductName — termék neve, kártya teteje (a checkbox után)
+            // lblProductName
             // 
             lblProductName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            lblProductName.Location = new Point(45, 15);
-            lblProductName.Size = new Size(950, 28);
             lblProductName.AutoEllipsis = true;
+            lblProductName.Location = new Point(45, 15);
+            lblProductName.Name = "lblProductName";
+            lblProductName.Size = new Size(950, 28);
+            lblProductName.TabIndex = 6;
             lblProductName.Text = "Termék neve";
             // 
-            // lblSku — második sor bal oldalt
+            // lblSku
             // 
-            lblSku.Location = new Point(45, 50);
+            lblSku.Location = new Point(45, 45);
+            lblSku.Name = "lblSku";
             lblSku.Size = new Size(280, 22);
+            lblSku.TabIndex = 5;
             lblSku.Text = "SKU";
             // 
-            // lblCategory — második sor folytatása
+            // lblCategory
             // 
-            lblCategory.Location = new Point(335, 50);
+            lblCategory.Location = new Point(335, 45);
+            lblCategory.Name = "lblCategory";
             lblCategory.Size = new Size(300, 22);
-            lblCategory.Text = "";
+            lblCategory.TabIndex = 4;
             // 
-            // lblStockLabel — harmadik sor: "Készlet:" felirat
+            // lblStockLabel
             // 
-            lblStockLabel.Location = new Point(45, 90);
+            lblStockLabel.Location = new Point(45, 75); 
+            lblStockLabel.Name = "lblStockLabel";
             lblStockLabel.Size = new Size(70, 22);
+            lblStockLabel.TabIndex = 3;
             lblStockLabel.Text = "Készlet:";
-            lblStockLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            lblStockLabel.TextAlign = ContentAlignment.MiddleLeft;
             // 
-            // lblCurrentStock — érték
+            // lblCurrentStock
             // 
-            lblCurrentStock.Location = new Point(115, 90);
-            lblCurrentStock.Size = new Size(60, 22);
+            lblCurrentStock.Location = new Point(115, 75);
+            lblCurrentStock.Name = "lblCurrentStock";
+            lblCurrentStock.Size = new Size(386, 22);
+            lblCurrentStock.TabIndex = 2;
             lblCurrentStock.Text = "0";
-            lblCurrentStock.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            lblCurrentStock.TextAlign = ContentAlignment.MiddleLeft;
             // 
-            // btnExpand — JOBBRA anchorolt: a kártya jobb szélén
+            // btnExpand
             // 
             btnExpand.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnExpand.Location = new Point(870, 87);
+            btnExpand.Location = new Point(870, 72);
+            btnExpand.Name = "btnExpand";
             btnExpand.Size = new Size(115, 28);
+            btnExpand.TabIndex = 1;
             btnExpand.UseVisualStyleBackColor = true;
             btnExpand.Click += btnExpand_Click;
             // 
-            // pnlVariants — a kártya alján, a kibontott méretek paneljéhez
+            // pnlVariants
             // 
             pnlVariants.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            pnlVariants.Location = new Point(45, 135);
+            pnlVariants.BackColor = Color.FromArgb(252, 250, 245);
+            pnlVariants.Location = new Point(45, 105);
+            pnlVariants.Name = "pnlVariants";
             pnlVariants.Size = new Size(950, 5);
-            pnlVariants.BackColor = System.Drawing.Color.FromArgb(252, 250, 245);
+            pnlVariants.TabIndex = 0;
             // 
             // ProductListItem
             // 
@@ -92,11 +107,10 @@
             Controls.Add(lblSku);
             Controls.Add(lblProductName);
             Controls.Add(chkSelect);
-            Name = "ProductListItem";
-            Size = new Size(1010, 145);
             Margin = new Padding(0, 0, 0, 8);
+            Name = "ProductListItem";
+            Size = new Size(1010, 115);
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion

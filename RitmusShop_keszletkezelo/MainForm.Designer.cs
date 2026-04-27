@@ -91,11 +91,13 @@
             flpProducts.AutoScroll = true;
             flpProducts.BackColor = Color.White;
             flpProducts.Dock = DockStyle.Fill;
+            flpProducts.FlowDirection = FlowDirection.TopDown;
             flpProducts.Location = new Point(15, 50);
             flpProducts.Name = "flpProducts";
             flpProducts.Padding = new Padding(10);
             flpProducts.Size = new Size(827, 610);
             flpProducts.TabIndex = 0;
+            flpProducts.WrapContents = false;
             // 
             // pnlBulkBar
             // 

@@ -1,7 +1,6 @@
-﻿// File: Services/HotcakesApiService.cs
-using Hotcakes.CommerceDTO.v1.Catalog;
+﻿using Hotcakes.CommerceDTO.v1.Catalog;
 using Newtonsoft.Json;
-using RitmusShop_keszletkezelo.services;
+using RitmusShop_keszletkezelo.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -192,10 +191,7 @@ namespace RitmusShop_keszletkezelo.Services
         private static string Truncate(string s, int max) =>
             s.Length <= max ? s : s.Substring(0, max) + "…";
 
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-        }
+        public void Dispose() { }
 
         private class ApiResponseEnvelope<T>
         {
