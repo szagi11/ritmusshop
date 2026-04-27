@@ -18,7 +18,6 @@ namespace RitmusShop_keszletkezelo
         private readonly HttpClient _httpClient;
         private Button? _activeCategoryButton;
 
-        // A kateg�ri�k cache-elve, hogy ne kelljen �jra lek�rni
         private List<CategorySnapshotDTO> _allCategories = new();
         private CategorySnapshotDTO? _currentParentCategory;
 
@@ -186,6 +185,15 @@ namespace RitmusShop_keszletkezelo
         // TERM�KEK BET�LT�SE
         // -----------------------------------------------------------------
 
+        private int CalcCardWidth()
+        {
+            var padding = flpProducts.Padding.Horizontal;
+            var scrollBar = flpProducts.VerticalScroll.Visible ? SystemInformation.VerticalScrollBarWidth : 0;
+            var width = flpProducts.ClientSize.Width - padding - scrollBar;
+
+            return Math.Max(200, width);
+        }
+
         private async Task LoadProductsForCategoryAsync(string categoryBvin)
         {
             Cursor = Cursors.WaitCursor;
@@ -234,12 +242,14 @@ namespace RitmusShop_keszletkezelo
                 {
                     var item = new ProductListItem();
                     item.Setup(_service, vm);
-                    item.Width = flpProducts.ClientSize.Width - 25;
+                    item.Width = CalcCardWidth();
                     item.SelectionChanged += (s, ev) => UpdateSelectionCounter();
                     item.ExpandRequested += ProductItem_ExpandRequested;
                     flpProducts.Controls.Add(item);
                 }
                 flpProducts.ResumeLayout();
+
+                ResizeAllCards();
                 UpdateSelectionCounter();
             }
             catch (Exception ex)
@@ -281,6 +291,7 @@ namespace RitmusShop_keszletkezelo
             opener.ToggleExpanded();
 
             flpProducts.PerformLayout();
+            ResizeAllCards();
         }
 
         // -----------------------------------------------------------------
@@ -289,7 +300,7 @@ namespace RitmusShop_keszletkezelo
 
         private void ResizeAllCards()
         {
-            int newWidth = flpProducts.ClientSize.Width - 25;
+            int newWidth = CalcCardWidth();
             if (newWidth < 200) return;
 
             flpProducts.SuspendLayout();
@@ -413,7 +424,7 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // SEG�D T�PUS � alkateg�ria ComboBox elem
+        // SEGÉD TÍPUS � alkateg�ria ComboBox elem
         // -----------------------------------------------------------------
 
         private class SubcategoryItem
@@ -421,6 +432,19 @@ namespace RitmusShop_keszletkezelo
             public string DisplayText { get; set; } = string.Empty;
             public string CategoryBvin { get; set; } = string.Empty;
             public override string ToString() => DisplayText;
+        }
+
+        private void flpProducts_SizeChanged(object sender, EventArgs e)
+        {
+            flpProducts.SuspendLayout();
+
+            foreach (Control ctrl in flpProducts.Controls)
+            {
+
+                ctrl.Width = flpProducts.ClientSize.Width - ctrl.Margin.Left - ctrl.Margin.Right;
+            }
+
+            flpProducts.ResumeLayout();
         }
     }
 }

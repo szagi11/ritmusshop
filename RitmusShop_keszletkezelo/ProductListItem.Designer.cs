@@ -60,7 +60,7 @@
             // 
             // lblStockLabel
             // 
-            lblStockLabel.Location = new Point(45, 75); 
+            lblStockLabel.Location = new Point(45, 75);
             lblStockLabel.Name = "lblStockLabel";
             lblStockLabel.Size = new Size(70, 22);
             lblStockLabel.TabIndex = 3;
@@ -79,6 +79,7 @@
             // btnExpand
             // 
             btnExpand.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            btnExpand.AutoSize = true;
             btnExpand.Location = new Point(870, 72);
             btnExpand.Name = "btnExpand";
             btnExpand.Size = new Size(115, 28);
@@ -111,6 +112,7 @@
             Name = "ProductListItem";
             Size = new Size(1010, 115);
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion

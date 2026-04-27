@@ -89,6 +89,8 @@
             // flpProducts
             // 
             flpProducts.AutoScroll = true;
+            flpProducts.AutoSize = true;
+            flpProducts.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             flpProducts.BackColor = Color.White;
             flpProducts.Dock = DockStyle.Fill;
             flpProducts.FlowDirection = FlowDirection.TopDown;
@@ -98,6 +100,7 @@
             flpProducts.Size = new Size(827, 610);
             flpProducts.TabIndex = 0;
             flpProducts.WrapContents = false;
+            flpProducts.SizeChanged += flpProducts_SizeChanged;
             // 
             // pnlBulkBar
             // 
@@ -260,6 +263,7 @@
             pnlHeader.ResumeLayout(false);
             pnlMain.ResumeLayout(false);
             pnlRight.ResumeLayout(false);
+            pnlRight.PerformLayout();
             pnlBulkBar.ResumeLayout(false);
             pnlBulkBar.PerformLayout();
             pnlSearchBar.ResumeLayout(false);
