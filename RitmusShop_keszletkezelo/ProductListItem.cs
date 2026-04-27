@@ -47,11 +47,16 @@ namespace RitmusShop_keszletkezelo
             }
         }
 
-        private int CalcVariantRowWidth() =>
-            Math.Max(280, pnlVariants.Width);
+        private int CalcVariantRowWidth()
+        {
+            var available = pnlVariants.Width - 10;
+            if (available <= 0) return 0;
+
+            return Math.Min(280, available);
+        }
 
         private int CalcVariantRowX(int rowWidth) =>
-            Math.Max(0, (pnlVariants.Width - rowWidth) / 2);
+            rowWidth <= 0 ? 0 : Math.Max(0, (pnlVariants.Width - rowWidth) / 2);
 
         private void ApplyCardStyling()
         {
@@ -239,9 +244,12 @@ namespace RitmusShop_keszletkezelo
             {
                 var row = new VariantListItem();
                 row.Setup(variant);
-                row.Location = new Point(5, y);
-                row.Width = pnlVariants.Width - 10;
-                row.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+
+                var rowWidth = CalcVariantRowWidth();
+                row.Location = new Point(CalcVariantRowX(rowWidth), y);
+                row.Width = rowWidth;
+                row.Anchor = AnchorStyles.Top;
+
                 row.SelectionChanged += OnVariantSelectionChanged;
                 pnlVariants.Controls.Add(row);
                 y += VariantRowHeight;
