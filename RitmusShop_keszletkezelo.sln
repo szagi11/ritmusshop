@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.37027.9
+VisualStudioVersion = 17.14.37027.9 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RitmusShop_keszletkezelo", "RitmusShop_keszletkezelo\RitmusShop_keszletkezelo.csproj", "{967C893B-3E72-4585-96F5-9883FB9F7074}"
 EndProject
