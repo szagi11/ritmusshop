@@ -16,6 +16,7 @@ namespace RitmusShop_keszletkezelo
         private const int VariantRowHeight = 36;
         private const int VariantPanelTopPadding = 5;
 
+
         private IHotcakesApiService _service = null!;
         private InventoryItemViewModel _vm = null!;
         private bool _variantsLoaded;

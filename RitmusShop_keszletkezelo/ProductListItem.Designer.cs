@@ -26,6 +26,7 @@
             // 
             // chkSelect
             // 
+            chkSelect.FlatAppearance.CheckedBackColor = Color.FromArgb(184, 146, 60);
             chkSelect.Location = new Point(15, 18);
             chkSelect.Name = "chkSelect";
             chkSelect.Size = new Size(20, 24);

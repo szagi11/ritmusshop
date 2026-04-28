@@ -350,7 +350,6 @@ ASALocalRun/
 # Local History for Visual Studio
 .localhistory/
 
-# BeatPulse healthcheck temp database
 healthchecksdb
 
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
@@ -372,3 +371,4 @@ secrets.json
 .env.local
 api-key.txt
 hotcakes-config.json
+.github/
