@@ -14,9 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Hotcakes.CommerceDTO">
-      <HintPath>..\..\..\..\Downloads\DevSamples\DevSamples\References\Hotcakes.CommerceDTO.dll</HintPath>
-    </Reference>
+	  <Reference Include="Hotcakes.CommerceDTO">
+		  <HintPath>..\dll\Hotcakes.CommerceDTO.dll</HintPath>
+	  </Reference>
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +27,10 @@
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="RitmusShop_keszletkezelo.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="dll\" />
 	</ItemGroup>
 
 </Project>
