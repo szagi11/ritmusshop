@@ -25,18 +25,31 @@ namespace RitmusShop_keszletkezelo
         {
             InitializeComponent();
 
-            var config = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false)
-                .Build();
+            string? baseUrl = null;
+            string? apiKey = null;
 
-            var baseUrl = config["HotcakesApi:BaseUrl"];
-            var apiKey = config["HotcakesApi:ApiKey"];
-
-            if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
+            try
             {
-                MessageBox.Show("Hiányzó konfiguráció! Ellenőrizd az appsettings.json-t.",
-                    "Konfigurációs hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                var config = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false)
+                    .Build();
+
+                baseUrl = config["HotcakesApi:BaseUrl"];
+                apiKey = config["HotcakesApi:ApiKey"];
+
+
+                if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
+                {
+                    throw new Exception("A BaseUrl vagy az ApiKey hiányzik a konfigurációból.");
+                }
+            }
+            catch (Exception)
+            {
+
+                string hibaUzenet = "Ellenőrizze, hogy az appsettings.json létezik-e, ellenőrizze az URL helyességét és az API kulcsot is. Ha az appsettings.json nem létezik akkor az appsettings.example.json-t másolja le nevezze át appsettings.json-re majd írja be a megfelelő URL-t és API kulcsot és mentse el";
+
+                MessageBox.Show(hibaUzenet, "Konfigurációs hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(1);
             }
 
@@ -339,7 +352,7 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
-        // KIJEL�L�SI SZ�ML�L�
+        // KIJEL�L�SI SZML�L�
         // -----------------------------------------------------------------
 
         private void UpdateSelectionCounter()
@@ -431,7 +444,6 @@ namespace RitmusShop_keszletkezelo
         {
             public string DisplayText { get; set; } = string.Empty;
             public string CategoryBvin { get; set; } = string.Empty;
-            public override string ToString() => DisplayText;
         }
 
         private void flpProducts_SizeChanged(object sender, EventArgs e)
