@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Hotcakes.CommerceDTO.v1.Catalog;
@@ -20,6 +21,22 @@ namespace RitmusShop_keszletkezelo
 
         private List<CategorySnapshotDTO> _allCategories = new();
         private CategorySnapshotDTO? _currentParentCategory;
+
+        /// <summary>
+        /// A háttér-kategórialekérdezéseket szakítja meg, amikor a felhasználó
+        /// másik kategóriára vált (különben régi kártyákra próbálnánk írni).
+        /// </summary>
+        private CancellationTokenSource? _backgroundCts;
+
+        /// <summary>
+        /// Form-élettartamra szóló CTS: a kezdeti cache-előmelegítést
+        /// (termékek + variánsok + inventory előtöltése csendben) ezzel
+        /// szakítjuk meg, amikor a form bezárul.
+        /// </summary>
+        private CancellationTokenSource? _warmupCts;
+
+        private const string TypeFilterAll = "Mind";
+        private string _currentTypeFilter = TypeFilterAll;
 
         public MainForm()
         {
@@ -68,10 +85,17 @@ namespace RitmusShop_keszletkezelo
             btnBulkApply.Click += BtnBulkApply_Click;
             btnSelectAll.Click += BtnSelectAll_Click;
             cmbSubcategory.SelectedIndexChanged += CmbSubcategory_SelectedIndexChanged;
+            cmbTypeFilter.SelectedIndexChanged += CmbTypeFilter_SelectedIndexChanged;
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
+            // Háttérfeladatok rendezett leállítása
+            _warmupCts?.Cancel();
+            _warmupCts?.Dispose();
+            _backgroundCts?.Cancel();
+            _backgroundCts?.Dispose();
+
             _service?.Dispose();
             _httpClient?.Dispose();
             base.OnFormClosed(e);
@@ -86,6 +110,8 @@ namespace RitmusShop_keszletkezelo
             try
             {
                 _allCategories = await _service.GetCategoriesAsync();
+
+                ResetTypeFilterToDefault();
 
                 foreach (var cat in _allCategories
                     .Where(c => string.IsNullOrEmpty(c.ParentId))
@@ -113,11 +139,97 @@ namespace RitmusShop_keszletkezelo
                     btnCat.Click += CategoryButton_Click;
                     flpCategories.Controls.Add(btnCat);
                 }
+
+                // Csendes háttér-előmelegítés: végigjárjuk az összes kategóriát
+                // és előtöltjük a termékek + variánsok + inventory adatait a
+                // szolgáltatás cache-ébe. Amikor a felhasználó rákattint egy
+                // kategóriára, a kártyák cache-ből épülnek — gyakorlatilag
+                // azonnal megjelennek.
+                _warmupCts = new CancellationTokenSource();
+                _ = WarmUpCacheInBackgroundAsync(_warmupCts.Token);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Kategóriák betöltése sikertelen:\n{ex.Message}",
                     "Hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Form indulásakor lefutó háttérfeladat. Lassan, a szervert kímélve
+        /// előtölti az összes kategória termékadatait a service cache-ébe.
+        /// A felhasználói kattintásokat NEM blokkolja — ha a felhasználó
+        /// közben rákattint egy kategóriára, az ugyanazokat a cache-bejegyzéseket
+        /// használja (Lazy&lt;Task&lt;T&gt;&gt;), így nincs dupla hálózati hívás.
+        /// </summary>
+        private async Task WarmUpCacheInBackgroundAsync(CancellationToken ct)
+        {
+            try
+            {
+                // Rövid várakozás, hogy a form előbb rendeződjön és a
+                // felhasználói első kattintás (ha van) elsőbbséget kapjon.
+                await Task.Delay(1500, ct).ConfigureAwait(false);
+
+                // Egyszerre maximum 2 termék variant+inventory párhuzamosan.
+                // A DNN/IIS app pool ezt simán elviseli, és nem akadályozza
+                // a felhasználói kattintás kéréseit.
+                using var sem = new SemaphoreSlim(2, 2);
+
+                foreach (var cat in _allCategories)
+                {
+                    if (ct.IsCancellationRequested) return;
+                    if (string.IsNullOrEmpty(cat.Bvin)) continue;
+
+                    try
+                    {
+                        // 1) Kategória termékei (cache-be kerül)
+                        var page = await _service
+                            .GetProductsForCategoryAsync(cat.Bvin)
+                            .ConfigureAwait(false);
+
+                        if (page?.Products == null || page.Products.Count == 0)
+                            continue;
+
+                        // 2) Minden termékre variants + inventory (cache-be)
+                        var tasks = page.Products.Select(async product =>
+                        {
+                            if (ct.IsCancellationRequested) return;
+                            await sem.WaitAsync(ct).ConfigureAwait(false);
+                            try
+                            {
+                                if (ct.IsCancellationRequested) return;
+                                var vt = _service.GetVariantsForProductAsync(product.Bvin);
+                                var it = _service.GetInventoryForProductAsync(product.Bvin);
+                                await Task.WhenAll(vt, it).ConfigureAwait(false);
+                            }
+                            catch
+                            {
+                                // Háttér-előtöltés hibái némán elnyelődnek —
+                                // a felhasználói klikk újrapróbálkozik (a
+                                // service hibás eredményt nem cache-el).
+                            }
+                            finally
+                            {
+                                sem.Release();
+                            }
+                        });
+
+                        await Task.WhenAll(tasks).ConfigureAwait(false);
+
+                        // Kis szünet kategóriák között, hogy a szervernek
+                        // ne legyen állandó terhelés.
+                        await Task.Delay(300, ct).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) { return; }
+                    catch
+                    {
+                        // Egyetlen kategória hibája nem akasztja meg a többit.
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Normális leállás form-zárásnál.
             }
         }
 
@@ -142,6 +254,7 @@ namespace RitmusShop_keszletkezelo
             _currentParentCategory = category;
 
             PopulateSubcategoryDropdown(category);
+            PopulateTypeFilterForCategory(category);
             await LoadProductsForCategoryAsync(category.Bvin ?? string.Empty);
         }
 
@@ -210,6 +323,13 @@ namespace RitmusShop_keszletkezelo
         private async Task LoadProductsForCategoryAsync(string categoryBvin)
         {
             Cursor = Cursors.WaitCursor;
+
+            // Régi háttér-feladatok leállítása (a felhasználó váltott kategóriát)
+            _backgroundCts?.Cancel();
+            _backgroundCts?.Dispose();
+            _backgroundCts = new CancellationTokenSource();
+            var ct = _backgroundCts.Token;
+
             flpProducts.Controls.Clear();
             txtSearch.Text = string.Empty;
 
@@ -231,20 +351,22 @@ namespace RitmusShop_keszletkezelo
                     return;
                 }
 
+                // Csak a bulk-művelethez ELENGEDHETETLEN adatokat töltjük be:
+                //   - variánsok  -> a bulk select tudja, mit válasszon ki
+                //   - inventory  -> a bulk apply ezeket az objektumokat módosítja
+                // A többi (opciók = méretnevek, kategória-felirat) később, halasztva.
                 var fetchTasks = page.Products.Select(async product =>
                 {
                     var variantsTask = _service.GetVariantsForProductAsync(product.Bvin);
                     var inventoryTask = _service.GetInventoryForProductAsync(product.Bvin);
-                    var optionsTask = SafeGetOptionsAsync(product.Bvin);
-                    var catsTask = SafeGetCategoriesForProductAsync(product.Bvin);
-                    await Task.WhenAll(variantsTask, inventoryTask, optionsTask, catsTask);
+                    await Task.WhenAll(variantsTask, inventoryTask);
 
                     return InventoryItemViewModel.Build(
                         product,
                         variantsTask.Result,
                         inventoryTask.Result,
-                        optionsTask.Result,
-                        catsTask.Result,
+                        new List<OptionDTO>(),            // halasztott: kibontáskor
+                        new List<CategorySnapshotDTO>(),  // halasztott: háttérben
                         _allCategories);
                 });
 
@@ -254,16 +376,21 @@ namespace RitmusShop_keszletkezelo
                 foreach (var vm in viewModels)
                 {
                     var item = new ProductListItem();
-                    item.Setup(_service, vm);
+                    item.Setup(_service, vm, _allCategories);
                     item.Width = CalcCardWidth();
                     item.SelectionChanged += (s, ev) => UpdateSelectionCounter();
                     item.ExpandRequested += ProductItem_ExpandRequested;
+                    item.CategoryLoaded += (s, ev) => ApplyAllFilters();
                     flpProducts.Controls.Add(item);
                 }
                 flpProducts.ResumeLayout();
 
-                ResizeAllCards();
-                UpdateSelectionCounter();
+                // A friss kártyákra is alkalmazzuk a már beállított típus-szűrőt
+                ApplyAllFilters();
+
+                // Háttérben pótoljuk a "Kategória: X" feliratokat — fojtott
+                // párhuzamossággal, hogy a szerver app pool ne fulladjon meg.
+                _ = FillCategoryLabelsInBackgroundAsync(ct);
             }
             catch (Exception ex)
             {
@@ -289,10 +416,43 @@ namespace RitmusShop_keszletkezelo
         }
 
         // -----------------------------------------------------------------
+        // HÁTTÉR-FELADATOK
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// A kártyák már megjelentek; csendben pótoljuk minden termékhez a
+        /// „Kategória: …" feliratot. Maximum 6 párhuzamos kéréssel, hogy a
+        /// szerver app pool ne torlódjon be.
+        /// </summary>
+        private async Task FillCategoryLabelsInBackgroundAsync(CancellationToken ct)
+        {
+            var items = flpProducts.Controls.OfType<ProductListItem>().ToList();
+            using var sem = new SemaphoreSlim(6, 6);
+
+            var tasks = items.Select(async item =>
+            {
+                if (ct.IsCancellationRequested) return;
+                await sem.WaitAsync(ct).ConfigureAwait(false);
+                try
+                {
+                    if (ct.IsCancellationRequested) return;
+                    await item.LoadCategoryLabelAsync(ct).ConfigureAwait(false);
+                }
+                finally
+                {
+                    sem.Release();
+                }
+            });
+
+            try { await Task.WhenAll(tasks).ConfigureAwait(false); }
+            catch (OperationCanceledException) { /* normális vált�skor */ }
+        }
+
+        // -----------------------------------------------------------------
         // KIBONT�S � csak egy k�rtya egyszerre nyitva
         // -----------------------------------------------------------------
 
-        private void ProductItem_ExpandRequested(object? sender, EventArgs e)
+        private async void ProductItem_ExpandRequested(object? sender, EventArgs e)
         {
             if (sender is not ProductListItem opener) return;
 
@@ -301,7 +461,7 @@ namespace RitmusShop_keszletkezelo
                 if (other != opener && other.IsExpanded)
                     other.Collapse();
             }
-            opener.ToggleExpanded();
+            await opener.ToggleExpandedAsync();
 
             flpProducts.PerformLayout();
             ResizeAllCards();
@@ -337,18 +497,89 @@ namespace RitmusShop_keszletkezelo
 
         private void TxtSearch_TextChanged(object? sender, EventArgs e)
         {
+            ApplyAllFilters();
+        }
+
+        // -----------------------------------------------------------------
+        // TÍPUS-SZŰRŐ (Mind / Tánccipő / Táncruha / …)
+        // -----------------------------------------------------------------
+
+        /// <summary>
+        /// Alaphelyzet a forma indulásakor — csak "Mind" van a szűrőben,
+        /// amíg a felhasználó nem kattint főkategóriára.
+        /// </summary>
+        private void ResetTypeFilterToDefault()
+        {
+            SetTypeFilterItems(Array.Empty<string>());
+        }
+
+        /// <summary>
+        /// Egy adott főkategóriára kattintáskor a szűrőbe csak ennek a
+        /// főkategóriának a közvetlen gyermekei kerülnek be:
+        ///   - "Verseny"  → Mind, Tánccipő, Táncruha
+        ///   - "Amatőr"   → Mind, Tánccipő, Táncruha
+        ///   - "Kiegészítők" → Mind  (nincs gyermek)
+        /// </summary>
+        private void PopulateTypeFilterForCategory(CategorySnapshotDTO parent)
+        {
+            var childNames = _allCategories
+                .Where(c => !string.IsNullOrEmpty(c.ParentId)
+                            && c.ParentId == parent.Bvin)
+                .Select(c => c.Name ?? string.Empty)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            SetTypeFilterItems(childNames);
+        }
+
+        /// <summary>
+        /// Egy közös segédfüggvény: a megadott neveket "Mind" után pakolja
+        /// a szűrőbe, kikapcsolja az eseményt a feltöltés idejére, és a
+        /// `_currentTypeFilter`-t alaphelyzetbe állítja.
+        /// </summary>
+        private void SetTypeFilterItems(IEnumerable<string> names)
+        {
+            cmbTypeFilter.SelectedIndexChanged -= CmbTypeFilter_SelectedIndexChanged;
+            cmbTypeFilter.Items.Clear();
+            cmbTypeFilter.Items.Add(TypeFilterAll);
+            foreach (var name in names)
+                if (!cmbTypeFilter.Items.Contains(name))
+                    cmbTypeFilter.Items.Add(name);
+
+            cmbTypeFilter.SelectedIndex = 0;
+            _currentTypeFilter = TypeFilterAll;
+            cmbTypeFilter.SelectedIndexChanged += CmbTypeFilter_SelectedIndexChanged;
+        }
+
+        private void CmbTypeFilter_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            _currentTypeFilter = cmbTypeFilter.SelectedItem?.ToString() ?? TypeFilterAll;
+            ApplyAllFilters();
+        }
+
+        /// <summary>
+        /// A keresőszöveget és a típus-szűrőt egyszerre alkalmazza minden
+        /// jelenleg betöltött termékkártyára.
+        /// </summary>
+        private void ApplyAllFilters()
+        {
             var query = txtSearch.Text.Trim();
+            var typeFilter = _currentTypeFilter;
 
             flpProducts.SuspendLayout();
             try
             {
                 foreach (var ctrl in flpProducts.Controls.OfType<ProductListItem>())
-                    ctrl.Visible = ctrl.MatchesFilter(query);
+                    ctrl.Visible = ctrl.MatchesFilter(query, typeFilter);
             }
             finally
             {
                 flpProducts.ResumeLayout();
             }
+
+            UpdateSelectionCounter();
         }
 
         // -----------------------------------------------------------------

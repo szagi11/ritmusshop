@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using RitmusShop_keszletkezelo.ViewModels;
@@ -17,8 +17,15 @@ namespace RitmusShop_keszletkezelo
             chkSelect.CheckedChanged += ChkSelect_CheckedChanged;
 
             this.BackColor = UiTheme.CardBackground;
-            foreach (Control c in this.Controls)
-                c.Font = UiTheme.BodyFont;
+            lblVariantName.Font = UiTheme.BodyFont;
+            lblOnHandValue.Font = UiTheme.BodyFont;
+            lblReservedValue.Font = UiTheme.BodyFont;
+            lblAvailableValue.Font = UiTheme.BodyFont;
+
+            lblVariantName.ForeColor = UiTheme.TextPrimary;
+            lblOnHandValue.ForeColor = UiTheme.TextPrimary;
+            lblReservedValue.ForeColor = UiTheme.TextSecondary;
+            lblAvailableValue.ForeColor = UiTheme.TextPrimary;
         }
 
         public void Setup(VariantViewModel variant)
@@ -26,10 +33,18 @@ namespace RitmusShop_keszletkezelo
             _variant = variant;
 
             lblVariantName.Text = variant.DisplayName;
-            lblCurrentStock.Text = variant.QuantityOnHand.ToString();
+            RefreshStockValues();
             chkSelect.Checked = variant.IsSelected;
 
             UpdateBackgroundForSelection();
+        }
+
+        private void RefreshStockValues()
+        {
+            if (_variant == null) return;
+            lblOnHandValue.Text = _variant.QuantityOnHand.ToString();
+            lblReservedValue.Text = _variant.QuantityReserved.ToString();
+            lblAvailableValue.Text = _variant.Available.ToString();
         }
 
         public void SetSelectedSilently(bool selected)
@@ -44,8 +59,9 @@ namespace RitmusShop_keszletkezelo
 
         public void RefreshDisplay()
         {
-            if (_variant != null)
-                lblCurrentStock.Text = _variant.QuantityOnHand.ToString();
+            if (_variant == null) return;
+            lblVariantName.Text = _variant.DisplayName;
+            RefreshStockValues();
         }
 
         private void UpdateBackgroundForSelection()
@@ -56,8 +72,9 @@ namespace RitmusShop_keszletkezelo
             this.BackColor = bg;
             chkSelect.BackColor = bg;
             lblVariantName.BackColor = bg;
-            lblStockLabel.BackColor = bg;
-            lblCurrentStock.BackColor = bg;
+            lblOnHandValue.BackColor = bg;
+            lblReservedValue.BackColor = bg;
+            lblAvailableValue.BackColor = bg;
         }
 
         private void ChkSelect_CheckedChanged(object? sender, EventArgs e)

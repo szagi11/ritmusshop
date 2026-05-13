@@ -22,6 +22,13 @@ namespace RitmusShop_keszletkezelo.ViewModels
                 ? Variants.Sum(v => v.Inventory?.QuantityOnHand ?? 0)
                 : (MainInventory?.QuantityOnHand ?? 0);
 
+        public int TotalQuantityReserved =>
+            HasVariants
+                ? Variants.Sum(v => v.Inventory?.QuantityReserved ?? 0)
+                : (MainInventory?.QuantityReserved ?? 0);
+
+        public int TotalAvailable => TotalQuantityOnHand - TotalQuantityReserved;
+
         public static InventoryItemViewModel Build(
             ProductDTO product,
             List<VariantDTO> variants,
@@ -59,7 +66,8 @@ namespace RitmusShop_keszletkezelo.ViewModels
                     VariantBvin = v.Bvin ?? string.Empty,
                     Sku = v.Sku ?? string.Empty,
                     DisplayName = BuildVariantDisplayName(v, labelLookup),
-                    Inventory = inventoryRows.FirstOrDefault(i => i.VariantId == v.Bvin)
+                    Inventory = inventoryRows.FirstOrDefault(i => i.VariantId == v.Bvin),
+                    Source = v
                 })
                 .ToList();
 
@@ -170,6 +178,14 @@ namespace RitmusShop_keszletkezelo.ViewModels
         public ProductInventoryDTO? Inventory { get; set; }
         public bool IsSelected { get; set; }
 
+        /// <summary>
+        /// Az eredeti VariantDTO; a halasztott opciók-betöltés után a
+        /// DisplayName újraépítéséhez kell.
+        /// </summary>
+        public VariantDTO? Source { get; set; }
+
         public int QuantityOnHand => Inventory?.QuantityOnHand ?? 0;
+        public int QuantityReserved => Inventory?.QuantityReserved ?? 0;
+        public int Available => QuantityOnHand - QuantityReserved;
     }
 }

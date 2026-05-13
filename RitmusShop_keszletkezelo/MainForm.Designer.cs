@@ -25,6 +25,8 @@
             txtBulkDelta = new TextBox();
             btnBulkApply = new Button();
             pnlSearchBar = new Panel();
+            cmbTypeFilter = new ComboBox();
+            lblTypeFilter = new Label();
             txtSearch = new TextBox();
             lblSearch = new Label();
             pnlLeft = new Panel();
@@ -167,6 +169,8 @@
             // pnlSearchBar
             // 
             pnlSearchBar.BackColor = Color.FromArgb(245, 242, 236);
+            pnlSearchBar.Controls.Add(cmbTypeFilter);
+            pnlSearchBar.Controls.Add(lblTypeFilter);
             pnlSearchBar.Controls.Add(txtSearch);
             pnlSearchBar.Controls.Add(lblSearch);
             pnlSearchBar.Dock = DockStyle.Top;
@@ -176,21 +180,43 @@
             pnlSearchBar.Size = new Size(827, 50);
             pnlSearchBar.TabIndex = 2;
             // 
+            // cmbTypeFilter
+            // 
+            cmbTypeFilter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            cmbTypeFilter.BackColor = Color.FromArgb(234, 234, 234);
+            cmbTypeFilter.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbTypeFilter.FlatStyle = FlatStyle.Flat;
+            cmbTypeFilter.Font = new Font("Segoe UI", 10F);
+            cmbTypeFilter.Location = new Point(635, 11);
+            cmbTypeFilter.Name = "cmbTypeFilter";
+            cmbTypeFilter.Size = new Size(180, 31);
+            cmbTypeFilter.TabIndex = 3;
+            // 
+            // lblTypeFilter
+            // 
+            lblTypeFilter.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            lblTypeFilter.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblTypeFilter.Location = new Point(574, 15);
+            lblTypeFilter.Name = "lblTypeFilter";
+            lblTypeFilter.Size = new Size(55, 24);
+            lblTypeFilter.TabIndex = 2;
+            lblTypeFilter.Text = "Típus:";
+            lblTypeFilter.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // txtSearch
             // 
+            txtSearch.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             txtSearch.AutoCompleteMode = AutoCompleteMode.Suggest;
             txtSearch.BackColor = Color.FromArgb(234, 234, 234);
-            txtSearch.Dock = DockStyle.Fill;
             txtSearch.ForeColor = SystemColors.MenuText;
-            txtSearch.Location = new Point(85, 10);
+            txtSearch.Location = new Point(85, 12);
             txtSearch.Name = "txtSearch";
             txtSearch.PlaceholderText = "Szűrés SKU vagy név alapján...";
-            txtSearch.Size = new Size(732, 27);
+            txtSearch.Size = new Size(480, 27);
             txtSearch.TabIndex = 0;
             // 
             // lblSearch
             // 
-            lblSearch.Dock = DockStyle.Left;
             lblSearch.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             lblSearch.Location = new Point(10, 10);
             lblSearch.Name = "lblSearch";
@@ -292,5 +318,7 @@
         private Button btnBulkApply;
         private Label lblSubcategory;
         private ComboBox cmbSubcategory;
+        private Label lblTypeFilter;
+        private ComboBox cmbTypeFilter;
     }
 }
