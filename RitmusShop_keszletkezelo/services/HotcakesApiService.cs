@@ -72,7 +72,6 @@ namespace RitmusShop_keszletkezelo.Services
         public async Task<ProductInventoryDTO?> UpdateInventoryAsync(ProductInventoryDTO inventory)
         {
             if (inventory == null) throw new ArgumentNullException(nameof(inventory));
-            // A gyári proxy a Bvin-t teszi az URL-be, és a teljes objektumot a body-ba.
             return await PostAsync<ProductInventoryDTO>(
                 $"productinventory/{Uri.EscapeDataString(inventory.Bvin ?? string.Empty)}",
                 inventory,
@@ -83,7 +82,6 @@ namespace RitmusShop_keszletkezelo.Services
         // BELSŐ HTTP RÉTEG
         // =================================================================
 
-        /// <summary>Generikus GET. A relatív útvonal végéhez magunk fűzzük az API kulcsot.</summary>
         private async Task<T?> GetAsync<T>(string relativePath, string operationName)
         {
             var url = AppendApiKey(relativePath);
@@ -101,7 +99,6 @@ namespace RitmusShop_keszletkezelo.Services
             return await DeserializeResponseAsync<T>(httpResp, operationName);
         }
 
-        /// <summary>Generikus POST. A body Newtonsoft-tal sorosítva megy.</summary>
         private async Task<T?> PostAsync<T>(string relativePath, object body, string operationName)
         {
             var url = AppendApiKey(relativePath);

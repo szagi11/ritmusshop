@@ -181,7 +181,7 @@
             txtSearch.AutoCompleteMode = AutoCompleteMode.Suggest;
             txtSearch.BackColor = Color.FromArgb(234, 234, 234);
             txtSearch.Dock = DockStyle.Fill;
-            txtSearch.ForeColor = SystemColors.Window;
+            txtSearch.ForeColor = SystemColors.MenuText;
             txtSearch.Location = new Point(85, 10);
             txtSearch.Name = "txtSearch";
             txtSearch.PlaceholderText = "Szűrés SKU vagy név alapján...";

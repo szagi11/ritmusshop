@@ -423,7 +423,7 @@ namespace RitmusShop_keszletkezelo
                 int success = results.Sum(r => r.SuccessCount);
                 int failed = results.Sum(r => r.FailedCount);
 
-                MessageBox.Show($"Kész. Sikeres: {success}, sikertelen: {failed}.",
+                MessageBox.Show($"Sikeres: {success}, sikertelen: {failed}.",
                     "Tömeges módosítás", MessageBoxButtons.OK,
                     failed == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
 
